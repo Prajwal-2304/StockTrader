@@ -1,101 +1,170 @@
-import Image from "next/image";
+"use client"
+import Link from 'next/link'
+import Image from 'next/image'
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ArrowUpRight, BarChart2, Globe, Star } from 'lucide-react'
+import SignupModal from '@/components/Signupmodal'
+import { useState } from 'react'
+import TermsAndConditions from '@/components/terms'
+import { useRouter } from 'next/navigation'
+export default function LandingPage() {
+  const [showTerms, setShowTerms] = useState(false)
+  const router= useRouter();
+  const openTermsWindow = () => {
+    setShowTerms(true)
+  }
 
-export default function Home() {
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+    <div className="flex flex-col min-h-screen">
+      <header className="px-4 lg:px-6 h-14 flex items-center fixed w-full z-10 bg-white/80 backdrop-blur-md dark:bg-gray-950/80">
+        <Link className="flex items-center justify-center" href="/">
+          <BarChart2 className="h-6 w-6 mr-2 text-blue-600 dark:text-blue-400" />
+          <span className="font-bold text-blue-600 dark:text-blue-400">AlphaWealth</span>
+        </Link>
+        <nav className="ml-auto flex gap-4 sm:gap-6">
+          <Link className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400" href="/features">
+            Features
+          </Link>
+          <Link className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400" href="/about">
+            About
+          </Link>
+          <Link className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400" href="#">
+            Contact
+          </Link>
+        </nav>
+      </header>
+      <main className="flex-1">
+        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48 relative">
+          <Image
+            src="https://images.unsplash.com/photo-1590283603385-17ffb3a7f29f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+            alt="Stock market background"
+            layout="fill"
+            objectFit="cover"
+            quality={100}
+            priority
+            className='z-0 pointer-events-none'
+          />
+          <div className="container px-4 md:px-6 relative z-10">
+            <div className="flex flex-col items-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl lg:text-6xl/none text-white">
+                  Master the Market with AlphaWealth
+                </h1>
+                <p className="mx-auto max-w-[700px] text-white md:text-xl">
+                  Advanced tools, real-time data, and expert insights to help you make informed investment decisions.
+                </p>
+              </div>
+              <div className="space-x-4">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">Get Started</Button>
+                <Button variant="outline" className="bg-white/20 backdrop-blur-sm border-white text-white hover:bg-white/30" 
+                onClick={()=>{router.push("/about")}}>Learn More</Button>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-blue-50 dark:bg-blue-950">
+          <div className="container px-4 md:px-6">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-12 text-blue-700 dark:text-blue-300">Our Features</h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              <Card className="bg-white/50 backdrop-blur-md dark:bg-gray-800/50">
+                <CardHeader>
+                  <CardTitle className="text-blue-600 dark:text-blue-400">Real-Time Data</CardTitle>
+                  <ArrowUpRight className="w-4 h-4 ml-2 text-blue-600 dark:text-blue-400" />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 dark:text-gray-300">Access up-to-the-minute stock prices, market trends, and financial news.</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white/50 backdrop-blur-md dark:bg-gray-800/50">
+                <CardHeader>
+                  <CardTitle className="text-blue-600 dark:text-blue-400">Advanced Analytics</CardTitle>
+                  <BarChart2 className="w-4 h-4 ml-2 text-blue-600 dark:text-blue-400" />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 dark:text-gray-300">Powerful tools for technical analysis, portfolio tracking, and risk assessment.</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-white/50 backdrop-blur-md dark:bg-gray-800/50">
+                <CardHeader>
+                  <CardTitle className="text-blue-600 dark:text-blue-400">Global Markets</CardTitle>
+                  <Globe className="w-4 h-4 ml-2 text-blue-600 dark:text-blue-400" />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 dark:text-gray-300">Trade and monitor stocks from markets around the world, all in one place.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </section>
+        <section className="w-full py-12 md:py-24 lg:py-32 bg-gradient-to-b from-blue-100 to-white dark:from-blue-950 dark:to-gray-900">
+          <div className="container px-4 md:px-6">
+            <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-12 text-blue-700 dark:text-blue-300">Customer Testimonials</h2>
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { name: "John Doe", role: "Day Trader", content: "AlphaWealth has revolutionized my trading strategy. The real-time data and advanced analytics have given me a significant edge in the market." },
+                { name: "Jane Smith", role: "Long-term Investor", content: "As a long-term investor, I appreciate the comprehensive market insights provided by AlphaWealth. It's helped me make more informed decisions for my portfolio." },
+                { name: "Mike Johnson", role: "Financial Advisor", content: "I recommend AlphaWealth to all my clients. The platform's user-friendly interface and powerful tools cater to both novice and experienced investors." }
+              ].map((testimonial, index) => (
+                <Card key={index} className="bg-white/50 backdrop-blur-md dark:bg-gray-800/50">
+                  <CardHeader>
+                    <CardTitle className="text-blue-600 dark:text-blue-400 flex items-center">
+                      <Star className="w-4 h-4 mr-2 fill-current" />
+                      {testimonial.name}
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{testimonial.role}</p>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 dark:text-gray-300">"{testimonial.content}"</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        </section>
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-4 md:px-6">
+            <div className="flex flex-col items-center justify-center space-y-4 text-center">
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-blue-700 dark:text-blue-300">Start Trading Today</h2>
+                <p className="mx-auto max-w-[600px] text-gray-600 md:text-xl/relaxed lg:text-base/relaxed xl:text-xl/relaxed dark:text-gray-400">
+                  Join thousands of successful investors. Sign up now and start your journey to financial success.
+                </p>
+              </div>
+              <div className="w-full max-w-sm space-y-2">
+                <SignupModal />
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  By signing up, you agree to our{" "}
+                  <Button
+                    variant="link"
+                    className="p-0 h-auto text-xs underline underline-offset-2 hover:text-blue-600 dark:hover:text-blue-400"
+                    onClick={openTermsWindow}
+                  >
+                    Terms & Conditions
+                  </Button>
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t bg-white/80 backdrop-blur-md dark:bg-gray-950/80">
+        <p className="text-xs text-gray-600 dark:text-gray-400">© 2023 AlphaWealth. All rights reserved.</p>
+        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
+          <Button
+            variant="link"
+            className="text-xs hover:text-blue-600 dark:hover:text-blue-400"
+            onClick={openTermsWindow}
+          >
+            Terms of Service
+          </Button>
+          <Link className="text-xs hover:text-blue-600 dark:hover:text-blue-400" href="#">
+            Privacy
+          </Link>
+        </nav>
       </footer>
+      {showTerms && <TermsAndConditions onClose={() => setShowTerms(false)} />}
     </div>
-  );
+  )
 }
+
