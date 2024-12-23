@@ -56,14 +56,14 @@ export default function Dashboard() {
           <div className="ml-auto flex items-center space-x-4">
             <Bell className="h-5 w-5 text-gray-500" />
             <User className="h-5 w-5 text-gray-500" />
-            <span className="font-medium">HBJ331</span>
+            <span className="font-medium">ATOZ129</span>
           </div>
         </div>
       </header>
 
       <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
         <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Hi, John</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Hi, Harshad</h2>
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">

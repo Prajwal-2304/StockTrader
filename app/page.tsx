@@ -102,9 +102,9 @@ export default function LandingPage() {
             <h2 className="text-3xl font-bold tracking-tighter sm:text-5xl text-center mb-12 text-blue-700 dark:text-blue-300">Customer Testimonials</h2>
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {[
-                { name: "John Doe", role: "Day Trader", content: "AlphaWealth has revolutionized my trading strategy. The real-time data and advanced analytics have given me a significant edge in the market." },
-                { name: "Jane Smith", role: "Long-term Investor", content: "As a long-term investor, I appreciate the comprehensive market insights provided by AlphaWealth. It's helped me make more informed decisions for my portfolio." },
-                { name: "Mike Johnson", role: "Financial Advisor", content: "I recommend AlphaWealth to all my clients. The platform's user-friendly interface and powerful tools cater to both novice and experienced investors." }
+                { name: "Harshad Mehta", role: "Day Trader", content: "AlphaWealth has revolutionized my trading strategy. The real-time data and advanced analytics have given me a significant edge in the market." },
+                { name: "Rakesh", role: "Long-term Investor", content: "As a long-term investor, I appreciate the comprehensive market insights provided by AlphaWealth. It's helped me make more informed decisions for my portfolio." },
+                { name: "Bhaskar", role: "Financial Advisor", content: "I recommend AlphaWealth to all my clients. The platform's user-friendly interface and powerful tools cater to both novice and experienced investors." }
               ].map((testimonial, index) => (
                 <Card key={index} className="bg-white/50 backdrop-blur-md dark:bg-gray-800/50">
                   <CardHeader>
@@ -150,18 +150,6 @@ export default function LandingPage() {
       </main>
       <footer className="flex flex-col gap-2 sm:flex-row py-6 w-full shrink-0 items-center px-4 md:px-6 border-t bg-white/80 backdrop-blur-md dark:bg-gray-950/80">
         <p className="text-xs text-gray-600 dark:text-gray-400">© 2023 AlphaWealth. All rights reserved.</p>
-        <nav className="sm:ml-auto flex gap-4 sm:gap-6">
-          <Button
-            variant="link"
-            className="text-xs hover:text-blue-600 dark:hover:text-blue-400"
-            onClick={openTermsWindow}
-          >
-            Terms of Service
-          </Button>
-          <Link className="text-xs hover:text-blue-600 dark:hover:text-blue-400" href="#">
-            Privacy
-          </Link>
-        </nav>
       </footer>
       {showTerms && <TermsAndConditions onClose={() => setShowTerms(false)} />}
     </div>
