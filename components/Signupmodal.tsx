@@ -11,18 +11,17 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { zodResolver } from '@hookform/resolvers/zod'
-import { formSchemaStageOne,formSchemaStageTwo,formSchemaStageThree } from '@/lib/userRegSchema'
-interface Nominee {
-  name: string;
-  relation: string;
-  percentage: string;
-}
+import { formSchemaStageOne,formSchemaStageTwo,formSchemaStageThree, finaldata } from '@/lib/userRegSchema'
+
 import { useForm,useFieldArray } from 'react-hook-form'
 import {Form, FormField, FormItem, FormLabel, FormControl, FormMessage} from "../components/ui/form"
 import * as z from 'zod'
 import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Eye,EyeOff } from 'lucide-react'
+import { createAccount } from '@/app/actions/createAccount'
+import {toast }from 'sonner'
+
 
 
 
@@ -31,11 +30,13 @@ export default function SignupModal() {
   const [stage, setStage] = useState(1)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [totalPercentage,setTotalPercentage]=useState(0);
-  
+  const [totalPercentage, setTotalPercentage] = useState(0)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
   const formOne = useForm<z.infer<typeof formSchemaStageOne>>({
     resolver: zodResolver(formSchemaStageOne),
     defaultValues: {
+      name: '',
       email: '',
       phoneNum: '',
       password: '',
@@ -55,7 +56,7 @@ export default function SignupModal() {
   const formThree = useForm<z.infer<typeof formSchemaStageThree>>({
     resolver: zodResolver(formSchemaStageThree),
     defaultValues: {
-      nominees: [{ nomineeName: '', relation: '', percentage: 0 }],
+      nominees: [{ nomineeName: '', email: '', pan: '', relation: '', percentage: 0 }],
     },
   })
 
@@ -64,42 +65,50 @@ export default function SignupModal() {
     name: "nominees",
   })
 
-  useEffect(()=>{
-    const watchedNominees=formThree.watch("nominees");
-    const total=watchedNominees.reduce((sum,nominee)=>sum+(nominee.percentage||0),0);
-    setTotalPercentage(total)
-  },[formThree.watch("nominees")])
-
-  const handleSliderChange = (index:number,value:number[])=>{
-    const newValue=value[0];
-    const currentNominees=formThree.getValues("nominees");
-    const otherNomineesTotal=currentNominees.reduce((sum,nominee,i)=>i===index?sum:sum+(nominee.percentage||0),0);
-    if(otherNomineesTotal+newValue<=100){
-      formThree.setValue(`nominees.${index}.percentage`,newValue);
-    }
-  }
+  useEffect(() => {
+    const watchedNominees = formThree.watch("nominees");
+    const total = watchedNominees.reduce((sum, nominee) => 
+      sum + (nominee.percentage || 0), 
+      0
+    );
+    setTotalPercentage(total);
+  }, [formThree.watch("nominees")])
 
   const onSubmitStageOne = (data: z.infer<typeof formSchemaStageOne>) => {
-    console.log(data)
     setStage(2)
   }
 
   const onSubmitStageTwo = (data: z.infer<typeof formSchemaStageTwo>) => {
-    console.log(data)
     setStage(3)
   }
 
-  const onSubmitStageThree = (data: z.infer<typeof formSchemaStageThree>) => {
-    if(Math.abs(totalPercentage-100)>0.1)
-        return ;
-    console.log(data)
-    setOpen(false)
-    setStage(1)
-    formOne.reset()
-    formTwo.reset()
-    formThree.reset()
-    setTotalPercentage(0)
+  const onSubmitStageThree = async (data: z.infer<typeof formSchemaStageThree>) => {
+    try {
+      setIsSubmitting(true)
+      
+      // Combine all form data
+      const formData = {
+        ...formOne.getValues(),
+        ...formTwo.getValues(),
+        ...data
+      }
+      
+      const res=await createAccount(formData)
+      console.log(res)
+      toast.success('Account created successfully!')
+      setOpen(false)
+      setStage(1)
+      formOne.reset()
+      formTwo.reset()
+      formThree.reset()
+      setTotalPercentage(0)
+    } catch (error) {
+      toast.error('Something went wrong')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -119,12 +128,25 @@ export default function SignupModal() {
             <form onSubmit={formOne.handleSubmit(onSubmitStageOne)} className="space-y-6 py-4">
               <FormField
                 control={formOne.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter your name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={formOne.control}
                 name="email"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your email" {...field} />
+                      <Input placeholder="Enter your email" type="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -137,7 +159,7 @@ export default function SignupModal() {
                   <FormItem>
                     <FormLabel>Phone Number</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter your phone number" {...field} />
+                      <Input placeholder="Enter your phone number" type="tel" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -299,6 +321,37 @@ export default function SignupModal() {
                   />
                   <FormField
                     control={formThree.control}
+                    name={`nominees.${index}.email`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter nominee email" type="email" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={formThree.control}
+                    name={`nominees.${index}.pan`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>PAN Number</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter PAN number" 
+                            {...field} 
+                            onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                            value={field.value.toUpperCase()}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={formThree.control}
                     name={`nominees.${index}.relation`}
                     render={({ field }) => (
                       <FormItem>
@@ -316,15 +369,26 @@ export default function SignupModal() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>
-                          Percentage Share: {field.value.toFixed(1)}%
+                          Percentage Share: {field.value?.toFixed(1) || '0.0'}%
                         </FormLabel>
                         <FormControl>
                           <Slider
-                            defaultValue={[0]}
+                            min={0}
                             max={100}
                             step={0.1}
-                            value={[field.value]}
-                            onValueChange={(value) => handleSliderChange(index, value)}
+                            value={[field.value || 0]}
+                            onValueChange={(value) => {
+                              const newValue = value[0];
+                              const currentNominees = formThree.getValues("nominees");
+                              const otherNomineesTotal = currentNominees.reduce(
+                                (sum, nominee, i) => i === index ? sum : sum + (nominee.percentage || 0),
+                                0
+                              );
+                              
+                              if (otherNomineesTotal + newValue <= 100) {
+                                field.onChange(newValue);
+                              }
+                            }}
                             className="py-4"
                           />
                         </FormControl>
@@ -332,7 +396,7 @@ export default function SignupModal() {
                       </FormItem>
                     )}
                   />
-                  {index > 0 && (
+                  {fields.length > 1 && (
                     <Button 
                       type="button" 
                       variant="destructive" 
@@ -349,7 +413,7 @@ export default function SignupModal() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => append({ nomineeName: '', relation: '', percentage: 0 })}
+                  onClick={() => append({ nomineeName: '', email: '', pan: '', relation: '', percentage: 0 })}
                   disabled={totalPercentage >= 100}
                   className="flex-1"
                 >
@@ -366,9 +430,11 @@ export default function SignupModal() {
                     ? 'bg-green-600 hover:bg-green-700' 
                     : 'bg-gray-400 cursor-not-allowed'
                 } text-white`}
-                disabled={totalPercentage !== 100}
+                disabled={isSubmitting}
               >
-                {totalPercentage === 100 ? 'Complete Signup' : 'Allocate 100% to Continue'}
+                {isSubmitting 
+                  ? 'Creating Account...' 
+                  : 'Complete Signup'}
               </Button>
             </form>
           </Form>

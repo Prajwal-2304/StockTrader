@@ -1,0 +1,99 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users{
+  id                          Int               @id @default(autoincrement())
+  pan                         String            @unique
+  bankacc                     String            @unique
+  name                        String
+  email                       String            @unique
+  password                    String
+  phone                       String
+  tpin                        String            
+  nominees                    Nominee[]
+  watchlists                  Watchlist[]
+  portfolio                   Portfolio[]
+  orders                      Order[]
+}
+
+model Nominee{
+  id                          Int               @id @default(autoincrement())
+  name                        String 
+  relation                    String            
+  email                       String 
+  pan                         String            @unique
+  percentage                  Float
+  userId                      Int 
+  user                        Users             @relation(fields: [userId],references: [id],onDelete:Cascade)
+}
+
+model Watchlist{
+  id                          Int               @id @default(autoincrement())
+  userId                      Int
+  user                        Users             @relation(fields: [userId],references: [id],onDelete: Cascade)
+  stocks                      WatchlistStock[]
+}
+model Stock{
+  ticker                      String            @id
+  name                        String            
+  volume                      BigInt
+  type                        String
+  watchlists                  WatchlistStock[] 
+  portfolios                  PortfolioStock[]
+  orders                      Order[]
+}
+model WatchlistStock{
+  id                          Int               @id @default(autoincrement())
+  watchlistid                 Int 
+  stockTicker                 String 
+  watchlist                   Watchlist         @relation(fields: [watchlistid],references: [id])
+  stocks                      Stock             @relation(fields: [stockTicker],references: [ticker])
+}
+
+model Portfolio{
+  id                          Int               @id @default(autoincrement())
+  userid                      Int 
+  user                        Users             @relation(fields: [userid],references: [id],onDelete: Cascade)
+  stocks                      PortfolioStock[]
+
+} 
+
+model PortfolioStock{
+  id                          Int               @id @default(autoincrement())
+  portfolioid                 Int
+  stockticker                 String 
+  quantity                    Int 
+  investedAmt                 Float 
+  portfolio                   Portfolio         @relation(fields: [portfolioid],references: [id])
+  stock                       Stock             @relation(fields: [stockticker],references: [ticker])
+}
+
+enum OrderType{
+  Buy 
+  Sell
+}
+
+model Order{
+  id                          Int               @id @default(autoincrement())
+  userId                      Int               
+  stockticker                 String 
+  type                        OrderType
+  quantity                    Int 
+  date                        DateTime
+  
+  user                        Users             @relation(fields: [userId],references: [id])
+  stock                       Stock             @relation(fields: [stockticker],references: [ticker])
+}
+
