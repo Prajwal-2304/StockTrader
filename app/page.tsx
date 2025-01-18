@@ -8,6 +8,7 @@ import SignupModal from '@/components/Signupmodal'
 import { useState } from 'react'
 import TermsAndConditions from '@/components/terms'
 import { useRouter } from 'next/navigation'
+import { Slider } from '@radix-ui/react-slider'
 export default function LandingPage() {
   const [showTerms, setShowTerms] = useState(false)
   const router= useRouter();
@@ -93,6 +94,7 @@ export default function LandingPage() {
                 <CardContent>
                   <p className="text-gray-600 dark:text-gray-300">Trade and monitor stocks from markets around the world, all in one place.</p>
                 </CardContent>
+                <Slider/>
               </Card>
             </div>
           </div>
