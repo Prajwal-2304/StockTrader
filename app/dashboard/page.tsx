@@ -1,198 +1,375 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { BarChart2, TrendingUp, TrendingDown, Search, Bell, User, Briefcase, DollarSign } from 'lucide-react'
+import { Plus, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { useStockPrice } from '../hooks/stockPrice'
+import dynamic from 'next/dynamic'
+import TradingViewChart from '@/components/tradingview'
 
-const mockData = {
-  indices: [
-    { name: 'NIFTY 50', value: 23753.45, change: 165.95, changePercent: 0.70 },
-    { name: 'SENSEX', value: 78540.17, change: 498.38, changePercent: 0.64 }
-  ],
-  watchlist: [
-    { symbol: 'RELIANCE', change: 17.00, changePercent: 1.41, price: 1222.30 },
-    { symbol: 'HDFCBANK', change: 28.95, changePercent: 1.63, price: 1801.00 },
-    { symbol: 'TCS', change: -12.00, changePercent: -0.29, price: 4158.30 },
-    { symbol: 'ICICIBANK', change: 8.40, changePercent: 0.65, price: 1296.80 },
-    { symbol: 'PNB', change: 0.61, changePercent: 0.61, price: 101.38 },
-    { symbol: 'BHEL', change: 5.20, changePercent: 2.21, price: 240.45 }
-  ]
+interface Stock{
+  name:string,
+  symbol:string
+}
+interface Watchlist{
+  id:string,name:string,
+  stocks:Stock[]
 }
 
-export default function Dashboard() {
-  const [data, setData] = useState(mockData)
-  const [searchQuery, setSearchQuery] = useState('')
+// export default function Dashboard() {
+//   const [watchlists, setWatchlists] = useState<Watchlist[]>([
+//     { id: '1', name: 'Default', stocks: [] }
+//   ])
+//   const [selectedWatchlist, setSelectedWatchlist] = useState<string>('1')
+//   const [availableStocks, setAvailableStocks] = useState<Stock[]>([])
+  
+//   // Get real-time prices for all stocks across watchlists
+//   const allSymbols = [...new Set(watchlists.flatMap(w => w.stocks.map(s => s.symbol)))]
+//   const realtimePrices = stockPrice(allSymbols)
 
+//   // useEffect(() => {
+//   //   // Fetch available stocks from backend
+//   //   fetch('/api/stocks')
+//   //     .then(res => res.json())
+//   //     .then(data => setAvailableStocks(data))
+//   // }, [])
+
+//   const addWatchlist = (name: string) => {
+//     setWatchlists(prev => [...prev, {
+//       id: Math.random().toString(),
+//       name,
+//       stocks: []
+//     }])
+//   }
+
+//   const addStockToWatchlist = (symbol: string) => {
+//     setWatchlists(prev => prev.map(watchlist => {
+//       if (watchlist.id === selectedWatchlist) {
+//         return {
+//           ...watchlist,
+//           stocks: [...watchlist.stocks, availableStocks.find(s => s.symbol === symbol)!]
+//         }
+//       }
+//       return watchlist
+//     }))
+//   }
+
+//   const removeStock = (watchlistId: string, symbol: string) => {
+//     setWatchlists(prev => prev.map(watchlist => {
+//       if (watchlist.id === watchlistId) {
+//         return {
+//           ...watchlist,
+//           stocks: watchlist.stocks.filter(s => s.symbol !== symbol)
+//         }
+//       }
+//       return watchlist
+//     }))
+//   }
+
+//   const currentWatchlist = watchlists.find(w => w.id === selectedWatchlist)
+
+//   return (
+//     <div className="p-6 max-w-6xl mx-auto">
+//       <div className="flex items-center justify-between mb-6">
+//         <h1 className="text-2xl font-bold">Hi, Harshad</h1>
+//         <Dialog>
+//           <DialogTrigger asChild>
+//             <Button>
+//               <Plus className="w-4 h-4 mr-2" />
+//               New Watchlist
+//             </Button>
+//           </DialogTrigger>
+//           <DialogContent>
+//             <DialogHeader>
+//               <DialogTitle>Create New Watchlist</DialogTitle>
+//             </DialogHeader>
+//             <form onSubmit={(e) => {
+//               e.preventDefault()
+//               const name = new FormData(e.currentTarget).get('name') as string
+//               addWatchlist(name)
+//             }}>
+//               <Input name="name" placeholder="Watchlist name" className="mb-4" />
+//               <Button type="submit">Create</Button>
+//             </form>
+//           </DialogContent>
+//         </Dialog>
+//       </div>
+
+//       <div className="grid gap-6 md:grid-cols-[300px,1fr]">
+//         <div className="space-y-4">
+//           <Select value={selectedWatchlist} onValueChange={setSelectedWatchlist}>
+//             <SelectTrigger>
+//               <SelectValue placeholder="Select a watchlist" />
+//             </SelectTrigger>
+//             <SelectContent>
+//               {watchlists.map(watchlist => (
+//                 <SelectItem key={watchlist.id} value={watchlist.id}>
+//                   {watchlist.name}
+//                 </SelectItem>
+//               ))}
+//             </SelectContent>
+//           </Select>
+
+//           {currentWatchlist && (
+//             <div className="p-4 border rounded-lg">
+//               <div className="flex flex-col gap-4">
+//                 <div className="flex items-center justify-between">
+//                   <h2 className="font-semibold">{currentWatchlist.name}</h2>
+//                 </div>
+//                 <Select onValueChange={addStockToWatchlist}>
+//                   <SelectTrigger>
+//                     <SelectValue placeholder="Add stock" />
+//                   </SelectTrigger>
+//                   <SelectContent>
+//                     {availableStocks.map(stock => (
+//                       <SelectItem key={stock.symbol} value={stock.symbol}>
+//                         {stock.symbol} - {stock.name}
+//                       </SelectItem>
+//                     ))}
+//                   </SelectContent>
+//                 </Select>
+//               </div>
+
+//               <div className="space-y-2 mt-4">
+//                 {currentWatchlist.stocks.map(stock => {
+//                   const currentPrice = realtimePrices[stock.symbol]
+                  
+//                   return (
+//                     <div
+//                       key={stock.symbol}
+//                       className="flex items-center justify-between p-2 bg-muted rounded"
+//                     >
+//                       <div>
+//                         <div className="font-medium">{stock.symbol}</div>
+//                         <div className="text-sm text-muted-foreground">{stock.name}</div>
+//                       </div>
+//                       <div className="flex items-center gap-4">
+//                         <div className="font-mono">
+//                           {currentPrice ? `₹${currentPrice.toFixed(2)}` : 'Loading...'}
+//                         </div>
+//                         <Button
+//                           variant="ghost"
+//                           size="icon"
+//                           onClick={() => removeStock(currentWatchlist.id, stock.symbol)}
+//                         >
+//                           <X className="w-4 h-4" />
+//                         </Button>
+//                       </div>
+//                     </div>
+//                   )
+//                 })}
+//               </div>
+//             </div>
+//           )}
+//         </div>
+
+//         <div className="grid gap-6">
+//           <div className="grid gap-4 p-6 border rounded-lg">
+//             <h2 className="font-semibold">Equity</h2>
+//             <div className="grid gap-2">
+//               <div className="flex justify-between">
+//                 <span className="text-muted-foreground">Margin available</span>
+//                 <span>₹0</span>
+//               </div>
+//               <div className="flex justify-between">
+//                 <span className="text-muted-foreground">Margins used</span>
+//                 <span>₹0</span>
+//               </div>
+//               <div className="flex justify-between">
+//                 <span className="text-muted-foreground">Opening balance</span>
+//                 <span>₹0</span>
+//               </div>
+//             </div>
+//             <Button variant="link" className="justify-start px-0">
+//               View statement
+//             </Button>
+//           </div>
+
+//           <div className="grid gap-4 p-6 border rounded-lg">
+//             <h2 className="font-semibold">Commodity</h2>
+//             <div className="grid gap-2">
+//               <div className="flex justify-between">
+//                 <span className="text-muted-foreground">Margin available</span>
+//                 <span>₹0</span>
+//               </div>
+//               <div className="flex justify-between">
+//                 <span className="text-muted-foreground">Margins used</span>
+//                 <span>₹0</span>
+//               </div>
+//               <div className="flex justify-between">
+//                 <span className="text-muted-foreground">Opening balance</span>
+//                 <span>₹0</span>
+//               </div>
+//             </div>
+//             <Button variant="link" className="justify-start px-0">
+//               View statement
+//             </Button>
+//           </div>
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
+
+
+
+const generateId = () => {
+  return Date.now().toString();
+};
+
+export default function Dashboard() {
+  const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
+  const [selectedWatchlist, setSelectedWatchlist] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
+  
+  // Call the hook unconditionally at the top level
+  const bitcoinPrice = useStockPrice();
+
+  // Initialize state after component mounts
   useEffect(() => {
-    setData(mockData)
-  }, [])
+    setWatchlists([{ id: '1', name: 'Default', stocks: [] }]);
+    setSelectedWatchlist('1');
+    setIsClient(true);
+  }, []);
+
+  // Handle time updates separately
+  useEffect(() => {
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    };
+    
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const addWatchlist = (name: string) => {
+    setWatchlists(prev => [...prev, {
+      id: generateId(),
+      name,
+      stocks: []
+    }]);
+  };
+
+  const currentWatchlist = watchlists.find(w => w.id === selectedWatchlist);
+
+  if (!isClient) {
+    return <div>Loading...</div>;
+  }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Top Navigation */}
-      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-14 items-center">
-          <div className="flex items-center space-x-4">
-            <Link className="flex items-center space-x-2" href="/">
-              <BarChart2 className="h-6 w-6 text-blue-600" />
-              <span className="font-bold">AlphaWealth</span>
-            </Link>
-            {/* Market Indices */}
-            <div className="hidden md:flex items-center space-x-4">
-              {data.indices.map((index) => (
-                <div key={index.name} className="flex items-center space-x-2">
-                  <span className="text-sm font-medium">{index.name}</span>
-                  <span className="text-sm font-bold">{index.value.toLocaleString()}</span>
-                  <span className={`text-xs ${index.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {index.change >= 0 ? '+' : ''}{index.change} ({index.changePercent}%)
-                  </span>
+    <div className="p-6 max-w-6xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">Hi, Harshad</h1>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              New Watchlist
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Watchlist</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const name = formData.get('name') as string;
+              if (name) addWatchlist(name);
+            }}>
+              <Input name="name" placeholder="Watchlist name" className="mb-4" />
+              <Button type="submit">Create</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-[300px,1fr]">
+        <div className="space-y-4">
+          {watchlists.length > 0 && (
+            <Select value={selectedWatchlist} onValueChange={setSelectedWatchlist}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a watchlist" />
+              </SelectTrigger>
+              <SelectContent>
+                {watchlists.map(watchlist => (
+                  <SelectItem key={watchlist.id} value={watchlist.id}>
+                    {watchlist.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+
+          {currentWatchlist && (
+            <div className="p-4 border rounded-lg">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="font-semibold">{currentWatchlist.name}</h2>
                 </div>
-              ))}
-            </div>
-          </div>
-          <div className="ml-auto flex items-center space-x-4">
-            <Bell className="h-5 w-5 text-gray-500" />
-            <User className="h-5 w-5 text-gray-500" />
-            <span className="font-medium">ATOZ129</span>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-        <div className="flex items-center justify-between space-y-2">
-          <h2 className="text-3xl font-bold tracking-tight">Hi, Harshad</h2>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {/* Watchlist Section */}
-          <div className="col-span-1">
-            <Card>
-              <CardHeader className="space-y-0 pb-4">
-                <CardTitle className="text-sm font-medium">Watchlist</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex space-x-2">
-                    <Search className="h-4 w-4 text-gray-500" />
-                    <Input 
-                      placeholder="Search stocks..." 
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="h-8"
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    {data.watchlist.map((stock) => (
-                      <div key={stock.symbol} className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium leading-none">{stock.symbol}</p>
-                          <p className={`text-sm ${stock.changePercent >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent}%
-                          </p>
-                        </div>
-                        <div className="text-right space-y-1">
-                          <p className="text-sm font-medium leading-none">{stock.price.toLocaleString()}</p>
-                          <p className={`text-sm ${stock.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                            {stock.change >= 0 ? '+' : ''}{stock.change}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
+                
+                <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium">Bitcoin (BTCUSDT)</div>
+                      <div className="text-sm text-muted-foreground">Binance</div>
+                    </div>
+                    <div className="font-mono text-lg">
+                      {bitcoinPrice 
+                        ? `$${bitcoinPrice.toFixed(2)}` 
+                        : 'Loading...'}
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="grid gap-6">
+          <div className="grid gap-4 p-6 border rounded-lg">
+            <h2 className="font-semibold">Market Overview</h2>
+            <div className="grid gap-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Bitcoin Price</span>
+                <span className="font-mono">
+                  {bitcoinPrice 
+                    ? `$${bitcoinPrice.toFixed(2)}` 
+                    : 'Loading...'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Last Updated</span>
+                <span>{currentTime}</span>
+              </div>
+            </div>
           </div>
 
-          {/* Main Content */}
-          <div className="col-span-2">
-            <div className="grid gap-4 md:grid-cols-2">
-              {/* Equity Section */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <Briefcase className="h-4 w-4" />
-                      <span>Equity</span>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Margin available</span>
-                      <span className="font-medium">₹0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Margins used</span>
-                      <span className="font-medium">₹0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Opening balance</span>
-                      <span className="font-medium">₹0</span>
-                    </div>
-                    <Button variant="link" className="text-blue-600 p-0 h-auto">
-                      View statement
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Commodity Section */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
-                    <div className="flex items-center space-x-2">
-                      <DollarSign className="h-4 w-4" />
-                      <span>Commodity</span>
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Margin available</span>
-                      <span className="font-medium">₹0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Margins used</span>
-                      <span className="font-medium">₹0</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-500">Opening balance</span>
-                      <span className="font-medium">₹0</span>
-                    </div>
-                    <Button variant="link" className="text-blue-600 p-0 h-auto">
-                      View statement
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Empty State */}
-            <Card className="mt-4">
-              <CardContent className="flex flex-col items-center justify-center py-8">
-                <Briefcase className="h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-sm text-gray-500 text-center mb-4">
-                  You don't have any stocks in your DEMAT yet. Get started with absolutely free equity investments.
-                </p>
-                <Button>Start investing</Button>
-              </CardContent>
-            </Card>
-
-            {/* Market Overview */}
-            <div className="mt-4">
-              <h3 className="text-lg font-medium mb-4">Market overview</h3>
-              {/* Market overview content would go here */}
-            </div>
+          <div className="grid gap-4 p-6 border rounded-lg">
+            <h2 className="font-semibold">Price History</h2>
+            <div style={{ width: "100%", height: "500px" }}>
+                    <TradingViewChart/>
+      </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
-
