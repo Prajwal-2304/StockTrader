@@ -1,8 +1,12 @@
 "use client"
-import React, { useEffect, useRef } from "react";
+import React, { useRef, useEffect } from 'react';
 
-export default function TradingViewChart() {
-  const containerRef = useRef(null);
+interface TradingViewChartProps {
+  symbol: string; // Define the symbol prop here
+}
+
+const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (containerRef.current && typeof window !== "undefined") {
@@ -12,14 +16,16 @@ export default function TradingViewChart() {
       script.onload = () => {
         new window.TradingView.widget({
           container_id: containerRef.current.id,
-          symbol: "BINANCE:BTCUSDT",
+          symbol: `BINANCE:${symbol}`, // Use the symbol prop here
           theme: "light",
           autosize: true,
         });
       };
       containerRef.current.appendChild(script);
     }
-  }, []);
+  }, [symbol]); // Ensure it re-renders when symbol changes
 
   return <div id="tradingview_chart" ref={containerRef} style={{ height: "500px" }} />;
-}
+};
+
+export default TradingViewChart;

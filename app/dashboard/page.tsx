@@ -1,487 +1,298 @@
 'use client'
-
-import { useRouter } from 'next/navigation'
-import { useSession } from 'next-auth/react'
-import { useState, useEffect, useCallback } from 'react'
-import { ExternalLink, Plus, X } from 'lucide-react'
-import { Loader2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect } from 'react';
+import { Plus, TrendingUp, Newspaper } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
-} from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
-import { useNewsData } from '../hooks/news'
-import { useStockPrice } from '../hooks/stockPrice'
-import { fetchAllStocks } from '../actions/fetchStocks'
-import type { Stock, Watchlist, PortfolioSummary } from '@/app/types/watchlist'
-import { getDefaultWatchlist,fetchAllWatchlist,createWatchlist,fetchWatchlist } from '../actions/watchlistActions'
-import { addStockToWatchlist } from '../actions/addStocksToWatchlists'
-import { number } from 'zod'
+} from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
+import TradingViewChart from '@/components/tradingview';
+import { useNewsData } from '@/app/hooks/news';
+import { useBulkPrices,useSinglePrice } from '../hooks/usePriceServices';
 
+interface Watchlist {
+  id: string;
+  name: string;
+  stocks: string[];
+}
 
+const cryptoList = [
+  { id: 51, ticker: "ETHUSDT", name: "Ethereum", type: "cryptocurrency", holdings: 1.2 },
+  { id: 52, ticker: "BTCUSDT", name: "Bitcoin", type: "cryptocurrency", holdings: 0.5 },
+  { id: 53, ticker: "BNBUSDT", name: "Binance Coin", type: "cryptocurrency", holdings: 10 },
+  { id: 54, ticker: "SOLUSDT", name: "Solana", type: "cryptocurrency", holdings: 25 },
+  { id: 55, ticker: "XRPUSDT", name: "XRP", type: "cryptocurrency", holdings: 1000 },
+  { id: 56, ticker: "ADAUSDT", name: "Cardano", type: "cryptocurrency", holdings: 500 },
+  { id: 57, ticker: "DOGEUSDT", name: "Dogecoin", type: "cryptocurrency", holdings: 2000 },
+  { id: 58, ticker: "PEPEUSDT", name: "Pepe Coin", type: "cryptocurrency", holdings: 100000 }
+];
+
+const generateId = () => {
+  return Date.now().toString();
+};
 
 export default function Dashboard() {
-  const router = useRouter()
-  const { data: session, status } = useSession()
-  const [watchlists, setWatchlists] = useState<Watchlist[]>([])
-  const [selectedWatchlist, setSelectedWatchlist] = useState<number>(0)
-  const [availableStocks, setAvailableStocks] = useState<Stock[]>([])
-  const [portfolioSummary, setPortfolioSummary] = useState<PortfolioSummary>({
-    totalValue: 0,
-    todayChange: 0,
-    todayChangePercent: 0
-  })
-  const [isLoading, setIsLoading] = useState(true)
-  const [newsData, setNewsData] = useState([])
-  const [isNewsLoading, setIsNewsLoading] = useState(false)
+  // All hooks must be called unconditionally at the top level
+  const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
+  const [selectedWatchlist, setSelectedWatchlist] = useState<string>('');
+  const [currentTime, setCurrentTime] = useState<string>('');
+  const [isClient, setIsClient] = useState(false);
+  const [selectedCrypto, setSelectedCrypto] = useState<typeof cryptoList[0] | null>(null);
   
-  const currentWatchlist = watchlists.find(w => w.id === selectedWatchlist)
-  const allSectors = [...new Set(watchlists.flatMap(w => w.stocks.map(s => s.type)))]
+  // Get prices for all cryptocurrencies
+  const symbols = cryptoList.map(crypto => crypto.ticker);
+  const prices = useBulkPrices(symbols);
   
-  // Get real-time prices for all stocks across watchlists
-  // const allSymbols = [...new Set(watchlists.flatMap(w => w.stocks.map(s => s.ticker)))]
-  const allSymbols =["BINANCE:BTCUSD","BINANCE:ETHUSD","BINANCE:XRPUSD","BINANCE:LTCUSD",]
-  const realtimePrices = useStockPrice(allSymbols)
-  //const { news, loading: newsLoading } = useNewsData(allSectors)
+  // Always call useSinglePrice with a default value if no crypto is selected
+  const singlePrice = useSinglePrice(selectedCrypto?.ticker || symbols[0]);
+  const { news, loading: newsLoading } = useNewsData("");
 
+  // Calculate total portfolio value
+  const totalPortfolioValue = Object.entries(prices).reduce((total, [ticker, price]) => {
+    const crypto = cryptoList.find(c => c.ticker === ticker);
+    if (crypto && price) {
+      return total + (price * crypto.holdings);
+    }
+    return total;
+  }, 0);
+
+  // Initialize state after component mounts
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.replace("/")
-    }
-  }, [status, router])
+    setWatchlists([{ id: '1', name: 'Default', stocks: [] }]);
+    setSelectedWatchlist('1');
+    setIsClient(true);
+  }, []);
 
+  // Handle time updates
   useEffect(() => {
-    const initializeWatchlists = async () => {
-      try {
-        setIsLoading(true)
-        const defaultWatchlist = await getDefaultWatchlist()
-        setWatchlists([defaultWatchlist])
-        setSelectedWatchlist(defaultWatchlist.id)
-        setAvailableStocks(defaultWatchlist.stocks)
-      } catch (error) {
-        console.error('Failed to initialize watchlists:', error)
-      }
-    }
-    if (session?.user?.id) {
-      initializeWatchlists()
-    }
-  }, [session?.user?.id])
+    const updateTime = () => {
+      setCurrentTime(new Date().toLocaleTimeString());
+    };
+    
+    updateTime();
+    const interval = setInterval(updateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
-  useEffect(() => {
-    const fetchStocks = async () => {
-      try {
-        const response = await fetchAllStocks()
-        if (!response) throw new Error("failed to fetch")
-        setAvailableStocks(response)
-      } catch (err) {
-        console.error("Error fetching stocks:", err)
-      }
-    }
-    fetchStocks()
-  }, [])
+  const addWatchlist = (name: string) => {
+    setWatchlists(prev => [...prev, {
+      id: generateId(),
+      name,
+      stocks: []
+    }]);
+  };
 
-  useEffect(() => {
-    const totalValue = watchlists
-      .flatMap(w => w.stocks)
-      .reduce((sum, stock) => sum + (realtimePrices[stock.ticker] || 0), 0)
-
-    setPortfolioSummary({
-      totalValue,
-      todayChange: 1000, // This should be calculated based on opening prices
-      todayChangePercent: (1000 / totalValue) * 100
-    })
-  }, [realtimePrices, watchlists])
-
-  useEffect(() => {
-    const allSymbols = watchlists.flatMap(w => w.stocks.map(s => s.ticker))
-    if (allSymbols.length > 0 && Object.keys(realtimePrices).length === allSymbols.length) {
-      setIsLoading(false)
-      fetchNews()
-    }
-  }, [realtimePrices, watchlists])
-
-  const handleAddWatchlist = async (name: string) => {
-    try {
-      const newWatchlist = await createWatchlist({name:name,uid:session?.user?.id})
-      setWatchlists(prev => [...prev, newWatchlist])
-    } catch (error) {
-      console.error('Failed to create watchlist:', error)
-    }
+  if (!isClient) {
+    return <div>Loading...</div>;
   }
 
-  const handleAddStockToWatchlist = async (ticker: string) => {
-    if (selectedWatchlist) {
-      try {
-        await addStockToWatchlist(selectedWatchlist, ticker)
-        const updatedWatchlist = await fetchWatchlist(selectedWatchlist)
-        setWatchlists(prev => prev.map(w => w.id === selectedWatchlist ? updatedWatchlist : w))
-      } catch (error) {
-        console.error('Failed to add stock to watchlist:', error)
-      }
-    }
-  }
+  // Render different views based on selectedCrypto
+  const renderCryptoDetail = () => {
+    if (!selectedCrypto) return null;
 
-  const handleRemoveStock = async (watchlistId: number, ticker: string) => {
-    try {
-      await removeStockFromWatchlist(watchlistId, ticker)
-      const updatedWatchlist = await fetchWatchlist(watchlistId)
-      setWatchlists(prev => prev.map(w => w.id === watchlistId ? updatedWatchlist : w))
-    } catch (error) {
-      console.error('Failed to remove stock from watchlist:', error)
-    }
-  }
-
-  const fetchNews = async () => {
-    setIsNewsLoading(true)
-    try {
-      const allSectors = [...new Set(watchlists.flatMap(w => w.stocks.map(s => s.type)))]
-      const news = await useNewsData(allSectors)
-      setNewsData(news)
-    } catch (error) {
-      console.error('Failed to fetch news:', error)
-    } finally {
-      setIsNewsLoading(false)
-    }
-  }
-
-  if (status === 'loading' || isLoading) {
-    return <div className="flex justify-center items-center h-screen"><Loader2 className="w-8 h-8 animate-spin" /></div>
-  }
-
-  if (status === 'unauthenticated') {
-    return null
-  }
-
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Hi, {session?.user?.name || 'User'}</h1>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              New Watchlist
+    return (
+      <div className="p-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedCrypto(null)}
+              className="mr-4"
+            >
+              ← Back
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Create New Watchlist</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={(e) => {
-              e.preventDefault()
-              const name = (e.currentTarget.elements.namedItem('name') as HTMLInputElement).value
-              handleAddWatchlist(name)
-            }}>
-              <Input name="name" placeholder="Watchlist name" className="mb-4" />
-              <Button type="submit">Create</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-[300px,1fr]">
-        <div className="space-y-4">
-          <Select value={selectedWatchlist.toString()} onValueChange={(value) => setSelectedWatchlist(Number(value))}>
-            <SelectTrigger>
+            <h1 className="text-2xl font-bold">
+              {selectedCrypto.name} Dashboard
+            </h1>
+          </div>
+          <Select value={selectedWatchlist} onValueChange={setSelectedWatchlist}>
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select a watchlist" />
             </SelectTrigger>
             <SelectContent>
               {watchlists.map(watchlist => (
-                <SelectItem key={watchlist.id} value={watchlist.id.toString()}>
+                <SelectItem key={watchlist.id} value={watchlist.id}>
                   {watchlist.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
+        </div>
 
-          {currentWatchlist && (
-            <div className="p-4 border rounded-lg">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="font-semibold">{currentWatchlist.name}</h2>
-                </div>
-                <Select onValueChange={handleAddStockToWatchlist}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Add stock" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableStocks.map(stock => (
-                      <SelectItem key={stock.id} value={stock.ticker}>
-                        {stock.ticker} - {stock.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        <div className="grid gap-6">
+          <div className="grid gap-4 p-6 border rounded-lg">
+            <h2 className="font-semibold">Market Overview</h2>
+            <div className="grid gap-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">
+                  {selectedCrypto.name} Price
+                </span>
+                <span className="font-mono">
+                  {singlePrice 
+                    ? `$${singlePrice.toFixed(2)}` 
+                    : 'Loading...'}
+                </span>
               </div>
-
-              <div className="space-y-2 mt-4">
-                {currentWatchlist.stocks.map(stock => {
-                  const currentPrice = realtimePrices[stock.ticker]
-                  
-                  return (
-                    <div
-                      key={stock.id}
-                      className="flex items-center justify-between p-2 bg-muted rounded"
-                    >
-                      <div>
-                        <div className="font-medium">{stock.ticker}</div>
-                        <div className="text-sm text-muted-foreground">{stock.name}</div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="font-mono">
-                          {currentPrice ? `₹${currentPrice.toFixed(2)}` : 'Loading...'}
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveStock(currentWatchlist.id, stock.ticker)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )
-                })}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Holdings</span>
+                <span className="font-mono">
+                  {selectedCrypto.holdings} {selectedCrypto.ticker.replace('USDT', '')}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Value</span>
+                <span className="font-mono">
+                  ${singlePrice 
+                    ? (singlePrice * selectedCrypto.holdings).toFixed(2)
+                    : '...'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Last Updated</span>
+                <span>{currentTime}</span>
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Portfolio Summary</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Total Value</span>
-                  <span className="text-2xl font-bold">
-                    ₹{portfolioSummary.totalValue.toFixed(2)}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Today's Change</span>
-                  <div className={`text-lg ${portfolioSummary.todayChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {portfolioSummary.todayChange >= 0 ? '+' : ''}
-                    ₹{portfolioSummary.todayChange.toFixed(2)} 
-                    ({portfolioSummary.todayChangePercent.toFixed(2)}%)
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="grid gap-4 p-6 border rounded-lg">
+            <h2 className="font-semibold">Price History</h2>
+            <div style={{ width: "100%", height: "500px" }}>
+              <TradingViewChart symbol={selectedCrypto.ticker}/>
+            </div>
+          </div>
         </div>
       </div>
+    );
+  };
 
-      <div className="mt-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Market News</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isNewsLoading ? (
-              <div className="flex justify-center items-center py-4">
-                <Loader2 className="w-6 h-6 animate-spin" />
+  const renderDashboard = () => {
+    return (
+      <div className="p-6 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-bold">Crypto Dashboard</h1>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="w-4 h-4 mr-2" />
+                New Watchlist
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Create New Watchlist</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                const name = formData.get('name') as string;
+                if (name) addWatchlist(name);
+              }}>
+                <Input name="name" placeholder="Watchlist name" className="mb-4" />
+                <Button type="submit">Create</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <Card className="mb-8">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <TrendingUp className="w-5 h-5" />
+              <h2 className="text-xl font-semibold">Portfolio Summary</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 bg-primary/5 rounded-lg">
+                <div className="text-sm text-muted-foreground mb-1">Total Value</div>
+                <div className="text-2xl font-mono">${totalPortfolioValue.toFixed(2)}</div>
               </div>
-            ) : newsData.length === 0 ? (
-              <div className="text-center py-4">No news available</div>
-            ) : (
-              <div className="space-y-4">
-                {newsData.map((item, index) => (
-                  <div key={index} className="p-4 border rounded-lg">
-                    <div className="flex justify-between items-start gap-4">
-                      <h3 className="font-medium">{item.headline}</h3>
-                      <a
-                        href={item.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline flex items-center gap-1"
-                      >
-                        Read more
-                        <ExternalLink className="w-4 h-4" />
-                      </a>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-2">{item.summary}</p>
-                    <div className="flex justify-between items-center mt-2 text-sm text-muted-foreground">
-                      <span>{item.source}</span>
-                      <span>{new Date(item.datetime * 1000).toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="p-4 bg-primary/5 rounded-lg">
+                <div className="text-sm text-muted-foreground mb-1">Number of Assets</div>
+                <div className="text-2xl font-mono">{cryptoList.length}</div>
               </div>
-            )}
+              <div className="p-4 bg-primary/5 rounded-lg">
+                <div className="text-sm text-muted-foreground mb-1">Last Updated</div>
+                <div className="text-2xl font-mono">{currentTime}</div>
+              </div>
+            </div>
           </CardContent>
         </Card>
-      </div> 
-    </div>
-  )
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {cryptoList.map((crypto) => (
+            <Card 
+              key={crypto.id}
+              className="cursor-pointer hover:shadow-lg transition-shadow"
+              onClick={() => setSelectedCrypto(crypto)}
+            >
+              <CardContent className="p-6">
+                <h2 className="text-xl font-semibold mb-2">{crypto.name}</h2>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">{crypto.ticker}</p>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Price:</span>
+                    <span className="font-mono">
+                      ${prices[crypto.ticker]?.toFixed(2) || '...'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Holdings:</span>
+                    <span className="font-mono">
+                      {crypto.holdings} {crypto.ticker.replace('USDT', '')}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid gap-4">
+          <div className="flex items-center gap-2">
+            <Newspaper className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">Latest Crypto News</h2>
+          </div>
+          {newsLoading ? (
+            <p>Loading news...</p>
+          ) : news.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {news.map((item, index) => (
+                <Card key={index}>
+                  <CardContent className="p-4">
+                    <a 
+                      href={item.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="hover:text-blue-500"
+                    >
+                      <h3 className="font-medium mb-2">{item.headline}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-2">{item.summary}</p>
+                      <div className="text-xs text-muted-foreground mt-2">
+                        {new Date(item.datetime * 1000).toLocaleDateString()}
+                      </div>
+                    </a>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <p>No news available</p>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  return selectedCrypto ? renderCryptoDetail() : renderDashboard();
 }
-
-
-
-
-
-
-
-// const generateId = () => {
-//   return Date.now().toString();
-// };
-
-// export default function Dashboard() {
-//   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
-//   const [selectedWatchlist, setSelectedWatchlist] = useState<string>('');
-//   const [currentTime, setCurrentTime] = useState<string>('');
-//   const [isClient, setIsClient] = useState(false);
-  
-//   // Call the hook unconditionally at the top level
-//   const bitcoinPrice = useStockPrice();
-
-//   // Initialize state after component mounts
-//   useEffect(() => {
-//     setWatchlists([{ id: '1', name: 'Default', stocks: [] }]);
-//     setSelectedWatchlist('1');
-//     setIsClient(true);
-//   }, []);
-
-//   // Handle time updates separately
-//   useEffect(() => {
-//     const updateTime = () => {
-//       setCurrentTime(new Date().toLocaleTimeString());
-//     };
-    
-//     updateTime();
-//     const interval = setInterval(updateTime, 1000);
-//     return () => clearInterval(interval);
-//   }, []);
-
-//   const addWatchlist = (name: string) => {
-//     setWatchlists(prev => [...prev, {
-//       id: generateId(),
-//       name,
-//       stocks: []
-//     }]);
-//   };
-
-//   const currentWatchlist = watchlists.find(w => w.id === selectedWatchlist);
-
-//   if (!isClient) {
-//     return <div>Loading...</div>;
-//   }
-
-//   return (
-//     <div className="p-6 max-w-6xl mx-auto">
-//       <div className="flex items-center justify-between mb-6">
-//         <h1 className="text-2xl font-bold">Hi, Harshad</h1>
-//         <Dialog>
-//           <DialogTrigger asChild>
-//             <Button>
-//               <Plus className="w-4 h-4 mr-2" />
-//               New Watchlist
-//             </Button>
-//           </DialogTrigger>
-//           <DialogContent>
-//             <DialogHeader>
-//               <DialogTitle>Create New Watchlist</DialogTitle>
-//             </DialogHeader>
-//             <form onSubmit={(e) => {
-//               e.preventDefault();
-//               const formData = new FormData(e.currentTarget);
-//               const name = formData.get('name') as string;
-//               if (name) addWatchlist(name);
-//             }}>
-//               <Input name="name" placeholder="Watchlist name" className="mb-4" />
-//               <Button type="submit">Create</Button>
-//             </form>
-//           </DialogContent>
-//         </Dialog>
-//       </div>
-
-//       <div className="grid gap-6 md:grid-cols-[300px,1fr]">
-//         <div className="space-y-4">
-//           {watchlists.length > 0 && (
-//             <Select value={selectedWatchlist} onValueChange={setSelectedWatchlist}>
-//               <SelectTrigger>
-//                 <SelectValue placeholder="Select a watchlist" />
-//               </SelectTrigger>
-//               <SelectContent>
-//                 {watchlists.map(watchlist => (
-//                   <SelectItem key={watchlist.id} value={watchlist.id}>
-//                     {watchlist.name}
-//                   </SelectItem>
-//                 ))}
-//               </SelectContent>
-//             </Select>
-//           )}
-
-//           {currentWatchlist && (
-//             <div className="p-4 border rounded-lg">
-//               <div className="flex flex-col gap-4">
-//                 <div className="flex items-center justify-between">
-//                   <h2 className="font-semibold">{currentWatchlist.name}</h2>
-//                 </div>
-                
-//                 <div className="p-4 bg-blue-50 dark:bg-blue-900 rounded-lg">
-//                   <div className="flex items-center justify-between">
-//                     <div>
-//                       <div className="font-medium">Bitcoin (BTCUSDT)</div>
-//                       <div className="text-sm text-muted-foreground">Binance</div>
-//                     </div>
-//                     <div className="font-mono text-lg">
-//                       {bitcoinPrice 
-//                         ? `$${bitcoinPrice.toFixed(2)}` 
-//                         : 'Loading...'}
-//                     </div>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//           )}
-//         </div>
-
-//         <div className="grid gap-6">
-//           <div className="grid gap-4 p-6 border rounded-lg">
-//             <h2 className="font-semibold">Market Overview</h2>
-//             <div className="grid gap-2">
-//               <div className="flex justify-between">
-//                 <span className="text-muted-foreground">Bitcoin Price</span>
-//                 <span className="font-mono">
-//                   {bitcoinPrice 
-//                     ? `$${bitcoinPrice.toFixed(2)}` 
-//                     : 'Loading...'}
-//                 </span>
-//               </div>
-//               <div className="flex justify-between">
-//                 <span className="text-muted-foreground">Last Updated</span>
-//                 <span>{currentTime}</span>
-//               </div>
-//             </div>
-//           </div>
-
-//           <div className="grid gap-4 p-6 border rounded-lg">
-//             <h2 className="font-semibold">Price History</h2>
-//             <div style={{ width: "100%", height: "500px" }}>
-//                     <TradingViewChart/>
-//       </div>
-//           </div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
