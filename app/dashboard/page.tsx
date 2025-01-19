@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useSession } from 'next-auth/react'
 import { useState, useEffect, useCallback } from 'react'
 import { ExternalLink, Plus, X } from 'lucide-react'
-
+import { Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -46,6 +46,9 @@ export default function Dashboard() {
     todayChange: 0,
     todayChangePercent: 0
   })
+  const [isLoading, setIsLoading] = useState(true)
+  const [newsData, setNewsData] = useState([])
+  const [isNewsLoading, setIsNewsLoading] = useState(false)
   
   const currentWatchlist = watchlists.find(w => w.id === selectedWatchlist)
   const allSectors = [...new Set(watchlists.flatMap(w => w.stocks.map(s => s.type)))]
@@ -54,7 +57,7 @@ export default function Dashboard() {
   // const allSymbols = [...new Set(watchlists.flatMap(w => w.stocks.map(s => s.ticker)))]
   const allSymbols =["BINANCE:BTCUSD","BINANCE:ETHUSD","BINANCE:XRPUSD","BINANCE:LTCUSD",]
   const realtimePrices = useStockPrice(allSymbols)
-  const { news, loading: newsLoading } = useNewsData(allSectors)
+  //const { news, loading: newsLoading } = useNewsData(allSectors)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -65,9 +68,10 @@ export default function Dashboard() {
   useEffect(() => {
     const initializeWatchlists = async () => {
       try {
+        setIsLoading(true)
         const defaultWatchlist = await getDefaultWatchlist()
-        const allWatchlists = await fetchAllWatchlist(session?.user?.id!) 
-        setWatchlists([defaultWatchlist, ...allWatchlists])
+        setWatchlists([defaultWatchlist])
+        setSelectedWatchlist(defaultWatchlist.id)
         setAvailableStocks(defaultWatchlist.stocks)
       } catch (error) {
         console.error('Failed to initialize watchlists:', error)
@@ -103,6 +107,14 @@ export default function Dashboard() {
     })
   }, [realtimePrices, watchlists])
 
+  useEffect(() => {
+    const allSymbols = watchlists.flatMap(w => w.stocks.map(s => s.ticker))
+    if (allSymbols.length > 0 && Object.keys(realtimePrices).length === allSymbols.length) {
+      setIsLoading(false)
+      fetchNews()
+    }
+  }, [realtimePrices, watchlists])
+
   const handleAddWatchlist = async (name: string) => {
     try {
       const newWatchlist = await createWatchlist({name:name,uid:session?.user?.id})
@@ -134,8 +146,21 @@ export default function Dashboard() {
     }
   }
 
-  if (status === 'loading') {
-    return <div>Loading...</div>
+  const fetchNews = async () => {
+    setIsNewsLoading(true)
+    try {
+      const allSectors = [...new Set(watchlists.flatMap(w => w.stocks.map(s => s.type)))]
+      const news = await useNewsData(allSectors)
+      setNewsData(news)
+    } catch (error) {
+      console.error('Failed to fetch news:', error)
+    } finally {
+      setIsNewsLoading(false)
+    }
+  }
+
+  if (status === 'loading' || isLoading) {
+    return <div className="flex justify-center items-center h-screen"><Loader2 className="w-8 h-8 animate-spin" /></div>
   }
 
   if (status === 'unauthenticated') {
@@ -270,13 +295,15 @@ export default function Dashboard() {
             <CardTitle>Market News</CardTitle>
           </CardHeader>
           <CardContent>
-            {newsLoading ? (
-              <div className="text-center py-4">Loading news...</div>
-            ) : news.length === 0 ? (
+            {isNewsLoading ? (
+              <div className="flex justify-center items-center py-4">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            ) : newsData.length === 0 ? (
               <div className="text-center py-4">No news available</div>
             ) : (
               <div className="space-y-4">
-                {news.map((item, index) => (
+                {newsData.map((item, index) => (
                   <div key={index} className="p-4 border rounded-lg">
                     <div className="flex justify-between items-start gap-4">
                       <h3 className="font-medium">{item.headline}</h3>
@@ -301,7 +328,7 @@ export default function Dashboard() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </div> 
     </div>
   )
 }
