@@ -9,9 +9,13 @@ import { useState } from 'react'
 import TermsAndConditions from '@/components/terms'
 import { useRouter } from 'next/navigation'
 import { Slider } from '@radix-ui/react-slider'
+import { LoginModal } from '@/components/loginmodal'
+
+
 export default function LandingPage() {
   const [showTerms, setShowTerms] = useState(false)
-  const router= useRouter();
+  const router = useRouter();
+
   const openTermsWindow = () => {
     setShowTerms(true)
   }
@@ -33,6 +37,7 @@ export default function LandingPage() {
           <Link className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400" href="#">
             Contact
           </Link>
+          <LoginModal />
         </nav>
       </header>
       <main className="flex-1">
@@ -157,4 +162,5 @@ export default function LandingPage() {
     </div>
   )
 }
+
 

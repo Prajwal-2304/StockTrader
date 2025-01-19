@@ -20,6 +20,7 @@ model Users{
   name                        String
   email                       String            @unique
   password                    String
+  salt                        String
   phone                       String
   tpin                        String            
   nominees                    Nominee[]
@@ -41,14 +42,16 @@ model Nominee{
 
 model Watchlist{
   id                          Int               @id @default(autoincrement())
+  name                        String
   userId                      Int
   user                        Users             @relation(fields: [userId],references: [id],onDelete: Cascade)
   stocks                      WatchlistStock[]
 }
 model Stock{
+  id                          Int               @unique @default(autoincrement())
   ticker                      String            @id
   name                        String            
-  volume                      BigInt
+  marketcap                   Float
   type                        String
   watchlists                  WatchlistStock[] 
   portfolios                  PortfolioStock[]

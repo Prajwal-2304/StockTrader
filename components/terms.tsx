@@ -45,3 +45,13 @@ export default function TermsAndConditions({ onClose }: TermsAndConditionsProps)
   )
 }
 
+// model Stock{
+//   id                          Int               @unique @default(autoincrement())
+//   ticker                      String            @id
+//   name                        String            
+//   marketcap                   Float
+//   type                        String
+//   watchlists                  WatchlistStock[] 
+//   portfolios                  PortfolioStock[]
+//   orders                      Order[]
+// }

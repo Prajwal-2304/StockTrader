@@ -49,12 +49,12 @@ async function sendMail({tpin,mail}:{tpin:any,mail:string}){
 }
 
 export async function createAccount(data: z.infer<typeof createAccountSchema>) {
-  console.log("Action called")
   try {
     const validatedData = createAccountSchema.parse(data)
     console.log("received",validatedData)
-    const saltrounds=10;
-    const hashedpass= await bcrypt.hash(validatedData.password,saltrounds);
+    const salt = await bcrypt.genSalt(10);
+    console.log("salt is ",salt);
+    const hashedpass= await bcrypt.hash(validatedData.password,salt);
     const tpin=Math.floor(1000+Math.random()*9000);
    
     await db.$transaction(async (tx) => {
@@ -68,6 +68,7 @@ export async function createAccount(data: z.infer<typeof createAccountSchema>) {
             bankacc: validatedData.accno,
             pan: validatedData.panNo,
             tpin: tpin.toString(),
+            salt:salt
           },
         });
         for (const nominee of validatedData.nominees) {
