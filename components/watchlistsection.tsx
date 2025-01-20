@@ -25,6 +25,8 @@ import { useNewsData } from '@/app/hooks/news';
 import TradingViewChart from './tradingview';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
+import { buyStock } from '@/app/actions/transaction';
+import { getBalance } from '@/app/actions/funds';
 type Stock = {
   ticker: string
   name: string
@@ -40,6 +42,7 @@ type Watchlist = {
   stocks: WatchlistStock[]
 }
 
+
 export default function WatchlistSection() {
   const [watchlists, setWatchlists] = useState<Watchlist[]>([])
   const [selectedWatchlist, setSelectedWatchlist] = useState<number | null>(null)
@@ -48,11 +51,14 @@ export default function WatchlistSection() {
   const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false)
   const [selectedCrypto, setSelectedCrypto] = useState<Stock | null>(null)
   const [currentTime, setCurrentTime] = useState<string>("")
+  const [quantities, setQuantities] = useState<Record<string, number>>({})
   const { toast } = useToast()
-  const session=useSession();
+  const session = useSession()
   const tickers = watchlists.flatMap((w) => w.stocks).map((s) => s.stocks.ticker + "USDT")
   const prices = useBulkPrices(tickers)
   const sp = prices[selectedCrypto?.ticker.concat("USDT") || tickers[0]]
+  const userID=session?.data?.user?.id
+  const name=session.data?.user?.name
 
   const { news, loading: newsLoading } = useNewsData(selectedCrypto?.ticker || "")
 
@@ -114,9 +120,47 @@ export default function WatchlistSection() {
     return () => clearInterval(interval)
   }, [])
 
+
+    const handleBuy = async(ticker:string,quantity:number)=>{
+        const price=prices[ticker.concat("USDT")]
+        //console.log("quantity is ",quantity)
+        const res=await getBalance(userID)
+        if((quantity*price>res.balance!)){
+            toast({
+              title:"Invalid",
+              description:"Insuffcient balance",
+              variant:"destructive"
+            })
+            return;
+        }
+        else{
+          const response=await buyStock(userID,ticker,price,quantity,res.balance!)
+          console.log(response)
+          if(response?.success){
+            console.log("Successfully bought")
+            toast({
+              title:"Success",
+              description:"Bought the coin",
+              variant:"default"
+            })
+          }else{
+            if(response?.error){
+              toast({
+                title:"Failed",
+                description:`Order failed due to ${response.error}`,
+                variant:"destructive"
+              })
+            }
+          }
+        }
+    }
+
+
+
+
   const handleCreateWatchlist = async (name: string) => {
     // Replace with actual user ID from auth
-    const userId = 1
+    const userId = session.data?.user?.id
     const result = await createWatchlist(userId, name)
     if (result.success) {
       toast({
@@ -153,8 +197,8 @@ export default function WatchlistSection() {
         description: "Successfully added ",
       })
       setIsAddingToWatchlist(false)
-      // Refresh watchlists
-      const userId = 1 // Replace with actual user ID from auth
+      
+      const userId =  userID
       const watchlistsResult = await getUserWatchlists(userId)
       if (watchlistsResult.success) {
         setWatchlists(watchlistsResult.data)
@@ -177,7 +221,7 @@ export default function WatchlistSection() {
         variant: "destructive",
       })
       // Refresh watchlists
-      const userId = 1 // Replace with actual user ID from auth
+      const userId = userID // Replace with actual user ID from auth
       const watchlistsResult = await getUserWatchlists(userId)
       if (watchlistsResult.success) {
         setWatchlists(watchlistsResult.data)
@@ -197,7 +241,7 @@ export default function WatchlistSection() {
           description: "Watchlist deleted successfully",
           variant: "default",
         })
-        const watchlistsResult = await getUserWatchlists(1)
+        const watchlistsResult = await getUserWatchlists(userID)
         if (watchlistsResult.success) {
           setWatchlists((prevWatchlists) => {
             const defaultWatchlist = prevWatchlists.find((w) => w.id === 0)
@@ -227,6 +271,14 @@ export default function WatchlistSection() {
     return watchlists.find((w) => w.id === selectedWatchlist)
   }
 
+  const handleQuantityChange = (ticker: string, value: string) => {
+    const quantity = Number.parseFloat(value) || 0
+    setQuantities((prev) => ({
+      ...prev,
+      [ticker]: quantity,
+    }))
+  }
+
   if (selectedCrypto) {
     return (
       <div className="p-6 max-w-6xl mx-auto">
@@ -250,6 +302,33 @@ export default function WatchlistSection() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Last Updated</span>
                 <span>{currentTime}</span>
+              </div>
+              <div className="flex items-center gap-4 mt-4">
+                <div className="flex-1">
+                  <Input
+                    type="number"
+                    placeholder="Quantity"
+                    value={quantities[selectedCrypto.ticker] || ""}
+                    onChange={(e) => handleQuantityChange(selectedCrypto.ticker, e.target.value)}
+                    className="w-full"
+                  />
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    console.log(handleBuy(selectedCrypto.ticker,quantities[selectedCrypto.ticker]))
+                  }}
+                >
+                  Buy
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    console.log(`Sell ${selectedCrypto.ticker}`)
+                  }}
+                >
+                  Sell
+                </Button>
               </div>
             </div>
           </Card>
@@ -287,7 +366,7 @@ export default function WatchlistSection() {
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
             <User className="w-5 h-5 text-muted-foreground" />
-            <span className="font-medium">John Doe</span>
+            <span className="font-medium">{name}</span>
           </div>
           <div className="h-4 w-px bg-border" />
           <div className="flex items-center gap-2">
@@ -407,6 +486,43 @@ export default function WatchlistSection() {
                   <span className="font-mono">${prices[stock.ticker.concat("USDT")]?.toFixed(2) || "..."}</span>
                 </div>
               </div>
+              <div className="space-y-2 mt-4">
+                <Input
+                  type="number"
+                  placeholder="Quantity"
+                  value={quantities[stock.ticker] || ""}
+                  onChange={(e) => {
+                    e.stopPropagation()
+                    handleQuantityChange(stock.ticker, e.target.value)
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full"
+                />
+                <div className="flex justify-between gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleBuy(stock.ticker,quantities[stock.ticker])
+                    }}
+                  >
+                    Buy
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      console.log(`Sell ${stock.ticker}`)
+                    }}
+                  >
+                    Sell
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         ))}
@@ -420,18 +536,13 @@ export default function WatchlistSection() {
           </Button>
         </div>
       )}
-      <div className="bg-gray-50 p-6 mt-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center gap-2 mb-6">
-            <Newspaper className="w-5 h-5 text-muted-foreground" />
-            <h2 className="text-xl font-bold">Crypto News</h2>
-          </div>
-
-          {newsLoading ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading news...</p>
+      {!newsLoading && news && news.length > 0 ? (
+        <div className="bg-gray-50 p-6 mt-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center gap-2 mb-6">
+              <Newspaper className="w-5 h-5 text-muted-foreground" />
+              <h2 className="text-xl font-bold">Crypto News</h2>
             </div>
-          ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {news.map((item, index) => (
                 <Card key={index} className="hover:shadow-lg transition-shadow">
@@ -455,10 +566,19 @@ export default function WatchlistSection() {
                 </Card>
               ))}
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">
+            {newsLoading ? "Loading news..." : "No news available at the moment."}
+          </p>
+        </div>
+      )}
     </div>
   )
 }
+
+
+
 

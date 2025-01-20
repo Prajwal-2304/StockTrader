@@ -39,7 +39,6 @@ model Nominee{
   percentage                  Float
   userId                      Int 
   user                        Users             @relation(fields: [userId],references: [id],onDelete:Cascade)
-
 }
 
 model Watchlist{
@@ -79,10 +78,12 @@ model PortfolioStock{
   id                          Int               @id @default(autoincrement())
   portfolioid                 Int
   stockticker                 String 
-  quantity                    Int 
-  investedAmt                 Float 
+  quantity                    Float 
+  investedAmt                 Float
+  buyprice                    Float 
   portfolio                   Portfolio         @relation(fields: [portfolioid],references: [id])
-  stock                       Stock             @relation(fields: [stockticker],references: [ticker])
+  stock                       Stock             @relation(fields: [stockticker],references: [ticker])                
+
 }
 
 enum OrderType{
@@ -92,12 +93,13 @@ enum OrderType{
 
 model Order{
   id                          Int               @id @default(autoincrement())
+  portfolioId                 Int
   userId                      Int               
   stockticker                 String 
   type                        OrderType
-  quantity                    Int 
+  quantity                    Float 
   date                        DateTime
-  
+  price                       Float 
   user                        Users             @relation(fields: [userId],references: [id])
   stock                       Stock             @relation(fields: [stockticker],references: [ticker])
 }

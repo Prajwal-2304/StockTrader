@@ -58,7 +58,7 @@ const unsubscribe = (ws: WebSocket, symbol: string) => {
 
 export function useBulkPrices(symbols: string[]) {
   const [prices, setPrices] = useState<PriceData>({});
-
+  //console.log("received ",symbols)
   useEffect(() => {
     const apikey = process.env.NEXT_PUBLIC_API;
     if (!apikey || symbols.length === 0) return;
@@ -97,6 +97,6 @@ export function useBulkPrices(symbols: string[]) {
       }
     };
   }, [symbols.join(',')]);
-
-  return prices;
+  //console.log("Sending ",prices)
+  return prices;  
 }

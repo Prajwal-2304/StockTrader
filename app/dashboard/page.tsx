@@ -7,7 +7,7 @@ import { redirect } from 'next/navigation';
 import { authOptions } from '../authstore/auth';
 export default async function DashboardPage() {
   const session= await getServerSession(authOptions);
-  console.log(session)
+  //console.log(session)
 
   if(session){
     const userId = session?.user?.id!!; 

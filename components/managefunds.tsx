@@ -15,15 +15,16 @@ export default function ManageFundsSection() {
   const [balance, setBalance] = useState(0)
   const { toast } = useToast()
   const session=useSession()
+  const userId=session.data?.user?.id
   useEffect(() => {
     fetchBalance()
   }, [])
 
   const fetchBalance = async () => {  
     try {
-      const res = await getBalance(session.data?.user.id) // Assuming user ID is 1
+      const res = await getBalance(userId) 
       if (res) {
-        setBalance(res)
+        setBalance(res.balance)
       } else {
         toast({
           variant: "destructive",
@@ -41,13 +42,13 @@ export default function ManageFundsSection() {
 
   const handleAddFunds = async () => {
     try {
-      const res = await addFunds(1, Number.parseFloat(amount))
+      const res = await addFunds(userId, Number.parseFloat(amount))
       if (res.success) {
         toast({
           description: `Amount $${amount} deposited successfully`,
         })
-        fetchBalance() // Refresh balance after adding funds
-        setAmount("") // Clear input field
+        fetchBalance()
+        setAmount("") 
       } else {
         toast({
           variant: "destructive",
@@ -65,13 +66,13 @@ export default function ManageFundsSection() {
 
   const handleWithdrawFunds = async () => {
     try {
-      const res = await withdrawFunds(1, Number.parseFloat(amount))
+      const res = await withdrawFunds(userId, Number.parseFloat(amount))
       if (res.success) {
         toast({
           description: `Amount $${amount} withdrawn successfully`,
         })
-        fetchBalance() // Refresh balance after withdrawal
-        setAmount("") // Clear input field
+        fetchBalance() 
+        setAmount("") 
       } else {
         toast({
           variant: "destructive",

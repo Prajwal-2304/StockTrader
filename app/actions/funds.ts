@@ -72,7 +72,7 @@ export async function addFunds(userId: number, amount: number) {
         select:{balance:true}
       })
     
-      return res?.balance
+      return {success:true,balance:res?.balance}
     }catch(error){
       return {success:false,error:error}
     }
