@@ -22,7 +22,8 @@ model Users{
   password                    String
   salt                        String
   phone                       String
-  tpin                        String            
+  tpin                        String
+  balance                     Float            
   nominees                    Nominee[]
   watchlists                  Watchlist[]
   portfolio                   Portfolio[]
@@ -51,8 +52,8 @@ model Stock{
   id                          Int               @unique @default(autoincrement())
   ticker                      String            @id
   name                        String            
-  marketcap                   Float
-  type                        String
+  supply                      Float
+  chain                       String
   watchlists                  WatchlistStock[] 
   portfolios                  PortfolioStock[]
   orders                      Order[]

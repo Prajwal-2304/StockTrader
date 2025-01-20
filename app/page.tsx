@@ -19,7 +19,7 @@ export default function LandingPage() {
   const openTermsWindow = () => {
     setShowTerms(true)
   }
-
+  
   return (
     <div className="flex flex-col min-h-screen">
       <header className="px-4 lg:px-6 h-14 flex items-center fixed w-full z-10 bg-white/80 backdrop-blur-md dark:bg-gray-950/80">

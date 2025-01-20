@@ -34,7 +34,7 @@ const setupWebSocket = (apikey: string) => {
 const subscribe = (ws: WebSocket, symbol: string) => {
   const subscription = { 
     type: 'subscribe', 
-    symbol: `BINANCE:${symbol}`
+    symbol: `BINANCE:${symbol}USDT`
   };
 
   if (ws.readyState === WebSocket.OPEN) {
@@ -48,7 +48,7 @@ const unsubscribe = (ws: WebSocket, symbol: string) => {
   if (ws.readyState === WebSocket.OPEN) {
     ws.send(JSON.stringify({ 
       type: 'unsubscribe', 
-      symbol: `BINANCE:${symbol}` 
+      symbol: `BINANCE:${symbol}USDT` 
     }));
   }
 };
@@ -98,7 +98,7 @@ export function useBulkPrices(symbols: string[]) {
 
 export function useSinglePrice(symbol: string) {
   const [price, setPrice] = useState<number | null>(null);
-  
+  console.log("recieved ",symbol)
   useEffect(() => {
     const apikey = process.env.NEXT_PUBLIC_API;
     if (!apikey || !symbol) return;

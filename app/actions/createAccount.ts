@@ -68,7 +68,8 @@ export async function createAccount(data: z.infer<typeof createAccountSchema>) {
             bankacc: validatedData.accno,
             pan: validatedData.panNo,
             tpin: tpin.toString(),
-            salt:salt
+            salt:salt,
+            balance:0
           },
         });
         for (const nominee of validatedData.nominees) {

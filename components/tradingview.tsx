@@ -16,7 +16,7 @@ const TradingViewChart: React.FC<TradingViewChartProps> = ({ symbol }) => {
       script.onload = () => {
         new window.TradingView.widget({
           container_id: containerRef.current.id,
-          symbol: `BINANCE:${symbol}`, // Use the symbol prop here
+          symbol: `BINANCE:${symbol}USDT`, // Use the symbol prop here
           theme: "light",
           autosize: true,
         });
