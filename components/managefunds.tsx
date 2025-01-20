@@ -3,13 +3,23 @@ import {  Button  } from './ui/button';
 import { Input } from './ui/input';
 import { Card,CardContent } from './ui/card';
 import { Plus, Minus } from 'lucide-react';
+import { addFunds } from '@/app/actions/funds';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ManageFundsSection() {
   const [amount, setAmount] = useState('');
-
+  const {toast}=useToast()
   const handleAddFunds = async () => {
-    // Implement your add funds logic here
-    console.log('Adding funds:', amount);
+    const res=await addFunds(1,parseFloat(amount))
+    if(res.success){
+      toast({
+        description:`Amount ${amount}$ deposited successfully`
+      })
+    }else{
+      toast({
+        description:"failed to add amount "
+      })
+    }
   };
 
   const handleWithdrawFunds = async () => {

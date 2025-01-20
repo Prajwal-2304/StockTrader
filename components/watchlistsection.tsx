@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { User, Plus, TrendingUp, Newspaper, X } from 'lucide-react';
+import { User, Plus, TrendingUp, Newspaper, X, CodeSquare } from 'lucide-react';
 import {Card, CardContent} from './ui/card'
  import { Dialog ,
   DialogContent,
@@ -20,7 +20,7 @@ import { Input } from './ui/input';
 
 import {  createWatchlist, addStockToWatchlist, removeStockFromWatchlist, getUserWatchlists } from '@/app/actions/watchlist';
 import { getStocks } from '@/app/actions/stock';
-import { useBulkPrices,useSinglePrice } from '@/app/hooks/usePriceServices';
+import { useBulkPrices } from '@/app/hooks/usePriceServices';
 import { useNewsData } from '@/app/hooks/news';
 import TradingViewChart from './tradingview';
 import { useToast } from '@/hooks/use-toast';
@@ -49,18 +49,21 @@ export default function WatchlistSection() {
   const [selectedCrypto, setSelectedCrypto] = useState<Stock | null>(null);
   const [currentTime, setCurrentTime] = useState<string>('');
   const {toast}=useToast()
-  // Get prices for all cryptocurrencies
+  
   const tickers = watchlists
     .flatMap(w => w.stocks)
-    .map(s => s.stocks.ticker);
+    .map(s => s.stocks.ticker+"USDT");
   const prices = useBulkPrices(tickers);
+ // console.log("Price received is ",prices)
+  const sp=prices[selectedCrypto?.ticker.concat("USDT")||tickers[0]]
+ // console.log("Actual price is ",sp)
+  // const singlePrice = useSinglePrice(selectedCrypto?.ticker || tickers[0]);
   
-  const singlePrice = useSinglePrice(selectedCrypto?.ticker || tickers[0]);
   const { news, loading: newsLoading } = useNewsData(selectedCrypto?.ticker || "");
 
   useEffect(() => {
     const loadStocks = async () => {
-      const result = await getStocks();
+      const result = await getStocks(); 
       if (result.success) {
         setAvailableStocks(result.data);
       }
@@ -96,9 +99,13 @@ export default function WatchlistSection() {
     // Replace with actual user ID from auth
     const userId = 1;
     const result = await createWatchlist(userId, name);
+    //console.log(result)
     if (result.success) {
+     // console.log("status is ",result.success)
         toast({
-            description:"Successfully created"
+            title:`Watchlist ${name }created`,
+            description:"Successfully created",
+            variant:"default"
         })
       // Refresh watchlists
       const watchlistsResult = await getUserWatchlists(userId);
@@ -107,7 +114,9 @@ export default function WatchlistSection() {
       }
     } else {
       toast({
-        description:result.error || 'Failed to create watchlist'
+        title:`Failed to create watchlist`,
+        description:result.error || 'Failed to create watchlist',
+        variant:"destructive"
       });
     }
   };
@@ -118,6 +127,7 @@ export default function WatchlistSection() {
     const result = await addStockToWatchlist(selectedWatchlist, selectedStock);
     if (result.success) {
         toast({
+            title:`Added stock ${selectedStock} successfully`,
             description:"Successfully added "
           })
       setIsAddingToWatchlist(false);
@@ -129,7 +139,9 @@ export default function WatchlistSection() {
       }
     } else {
         toast({
-            description:"Failed to  remove"
+            title:"Failure",
+            description:"Failed to  add the stock ",
+            variant:"destructive"
           })
     }
   };
@@ -138,7 +150,9 @@ export default function WatchlistSection() {
     const result = await removeStockFromWatchlist(watchlistId, stockTicker);
     if (result.success) {
       toast({
-        description:"Successfully removed"
+        title:`Removed ${stockTicker} successfully`,
+        description:"Successfully removed from watchlist",
+        variant:"destructive"
       })
       // Refresh watchlists
       const userId = 1; // Replace with actual user ID from auth
@@ -182,8 +196,8 @@ export default function WatchlistSection() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Price</span>
                 <span className="font-mono">
-                  {singlePrice 
-                    ? `$${singlePrice.toFixed(2)}` 
+                  {sp 
+                    ? `$${sp.toFixed(2)}` 
                     : 'Loading...'}
                 </span>
               </div>
@@ -345,7 +359,7 @@ export default function WatchlistSection() {
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Price:</span>
                   <span className="font-mono">
-                    ${prices[stock.ticker]?.toFixed(2) || '...'}
+                    ${prices[stock.ticker.concat("USDT")]?.toFixed(2) || '...'}
                   </span>
                 </div>
               </div>
