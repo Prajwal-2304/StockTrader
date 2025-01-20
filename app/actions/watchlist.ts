@@ -3,6 +3,8 @@
 import db from "@/db/index"
 import { revalidatePath } from "next/cache";
 
+
+
 export async function createWatchlist(userId: number, name: string) {
   try {
     await db.watchlist.create({
@@ -57,8 +59,8 @@ export async function deleteWatchlist(watchlistId: number) {
     });
     revalidatePath('/dashboard');
     return { success: true };
-  } catch (error) {
-    return { success: false, error: 'Failed to delete watchlist' };
+  } catch (err) {
+    return { success: false, error: err };
   }
 }
 

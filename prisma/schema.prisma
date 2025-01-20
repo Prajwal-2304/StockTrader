@@ -35,10 +35,11 @@ model Nominee{
   name                        String 
   relation                    String            
   email                       String 
-  pan                         String            @unique
+  pan                         String            
   percentage                  Float
   userId                      Int 
   user                        Users             @relation(fields: [userId],references: [id],onDelete:Cascade)
+
 }
 
 model Watchlist{
@@ -62,7 +63,7 @@ model WatchlistStock{
   id                          Int               @id @default(autoincrement())
   watchlistid                 Int 
   stockTicker                 String 
-  watchlist                   Watchlist         @relation(fields: [watchlistid],references: [id])
+  watchlist                   Watchlist         @relation(fields: [watchlistid],references: [id],onDelete: Cascade)
   stocks                      Stock             @relation(fields: [stockTicker],references: [ticker])
 }
 

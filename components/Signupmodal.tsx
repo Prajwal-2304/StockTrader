@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button'
 import { Slider } from '@/components/ui/slider'
 import { Eye,EyeOff } from 'lucide-react'
 import { createAccount } from '@/app/actions/createAccount'
-import {toast }from 'sonner'
+import { useToast } from '@/hooks/use-toast'
 
 
 
@@ -32,7 +32,7 @@ export default function SignupModal() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [totalPercentage, setTotalPercentage] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
-
+  const {toast}=useToast();
   const formOne = useForm<z.infer<typeof formSchemaStageOne>>({
     resolver: zodResolver(formSchemaStageOne),
     defaultValues: {
@@ -94,16 +94,34 @@ export default function SignupModal() {
       }
       
       const res=await createAccount(formData)
-      console.log(res)
-      toast.success('Account created successfully!')
-      setOpen(false)
+      if(res.success){
+        toast({
+          title:"Success",
+          description:"Account created successfully",
+          variant:"default"
+        })
+        setOpen(false)
       setStage(1)
       formOne.reset()
       formTwo.reset()
       formThree.reset()
       setTotalPercentage(0)
+      }else {
+        console.log("Error is ",res.error)
+        toast({
+          title:"Failure",
+          description:`Account creation failed : ${res.error}`,
+          variant:"destructive"
+        })
+        //setOpen(false)
+      setStage(1)
+      formOne.reset()
+      formTwo.reset()
+      formThree.reset()
+      setTotalPercentage(0)
+      }
     } catch (error) {
-      toast.error('Something went wrong')
+      console.log(error);
     } finally {
       setIsSubmitting(false)
     }
