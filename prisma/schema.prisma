@@ -72,7 +72,7 @@ model Portfolio{
   userid                      Int 
   user                        Users             @relation(fields: [userid],references: [id],onDelete: Cascade)
   stocks                      PortfolioStock[]
-
+  investedAmount              Float             @default(0)
 } 
 
 model PortfolioStock{

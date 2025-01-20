@@ -63,3 +63,17 @@ export async function addFunds(userId: number, amount: number) {
       };
     }
   }
+
+  export async function getBalance(userid:number){
+    console.log("got ",userid)
+    try{
+      const res=await db.users.findUnique({
+        where:{id:userid},
+        select:{balance:true}
+      })
+    
+      return res?.balance
+    }catch(error){
+      return {success:false,error:error}
+    }
+  }

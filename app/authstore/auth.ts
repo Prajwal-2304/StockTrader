@@ -11,13 +11,20 @@ export const authOptions:NextAuthOptions={
                 password:{label:"Password",type:"password"}
             },
             async authorize(credentials){
-                if(!credentials) return null;
-            console.log(credentials)
+                if(!credentials) return {success:false,error:"Missing credentials "};
+            
+            // const usermail=await db.users.findUnique({
+            //     where:{email:credentials.email}
+            // })
+            // console.log(usermail)
+            // if(!usermail){
+            //     console.log("Entered thee error ")
+            //     return {success:false,error:"Invalid mail id"}
+            // }
             const res= await db.users.findUnique({
                 select:{salt:true},
                 where:{email:credentials.email}
             })
-            console.log("salt is ",res?.salt)
             const password=await bcrypt.hash(credentials.password,res?.salt)
             const user = await db.users.findUnique({
                 where:{email:credentials.email,password:password}
@@ -50,7 +57,7 @@ export const authOptions:NextAuthOptions={
                 session.user.name=token.name;
                 session.user.id=token.id
             }
-           // console.log("session details are ",session)
+          // console.log("session details are ",session)
             return session;
         },
     },

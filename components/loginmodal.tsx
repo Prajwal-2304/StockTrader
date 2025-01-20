@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/dialog"
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-
+import { useToast } from '@/hooks/use-toast'
 export function LoginModal() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const router = useRouter();
+  const {toast}=useToast()
   const handleLogin =async (e: React.FormEvent) => {
     e.preventDefault()
     try {
@@ -28,8 +29,17 @@ export function LoginModal() {
         password,
       })
       if (result?.error) {
-        console.error('Login failed:', result.error)
+        toast({
+          title:"Login failed ",
+          description:"Invalid mail or password",
+          variant:"destructive"
+        })
       } else {
+        toast({
+          title:"Success",
+          description:"Login successfull",
+          variant:"default"
+        })
         router.push("/dashboard");
       }
     } catch (error) {

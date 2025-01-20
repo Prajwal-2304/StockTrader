@@ -6,7 +6,8 @@ import WatchlistSection from './watchlistsection';
 import PortfolioSection from './portfolio';
 import TokenLaunchSection from './token';
 import ManageFundsSection from './managefunds';
-
+import { signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 export type Section = 'watchlist' | 'portfolio' | 'token-launch' | 'manage-funds';
 
 const navigationItems = [
@@ -18,7 +19,11 @@ const navigationItems = [
 
 function App() {
   const [activeSection, setActiveSection] = useState<Section>('watchlist');
-
+const router =useRouter()
+  const handleLogout = async () =>{
+      await signOut({redirect:false})
+      router.replace("/")
+  }
   const renderSection = () => {
     switch (activeSection) {
       case 'watchlist':
@@ -41,6 +46,7 @@ function App() {
           items={navigationItems}
           activeSection={activeSection}
           onNavigate={setActiveSection}
+          onLogout={handleLogout}
         />
         <main className="flex-1 p-8">
           {renderSection()}

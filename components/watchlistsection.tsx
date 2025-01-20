@@ -24,7 +24,7 @@ import { useBulkPrices } from '@/app/hooks/usePriceServices';
 import { useNewsData } from '@/app/hooks/news';
 import TradingViewChart from './tradingview';
 import { useToast } from '@/hooks/use-toast';
-
+import { useSession } from 'next-auth/react';
 type Stock = {
   ticker: string
   name: string
@@ -49,7 +49,7 @@ export default function WatchlistSection() {
   const [selectedCrypto, setSelectedCrypto] = useState<Stock | null>(null)
   const [currentTime, setCurrentTime] = useState<string>("")
   const { toast } = useToast()
-
+  const session=useSession();
   const tickers = watchlists.flatMap((w) => w.stocks).map((s) => s.stocks.ticker + "USDT")
   const prices = useBulkPrices(tickers)
   const sp = prices[selectedCrypto?.ticker.concat("USDT") || tickers[0]]
@@ -66,7 +66,7 @@ export default function WatchlistSection() {
 
     const loadWatchlists = async () => {
       // Replace with actual user ID from auth
-      const userId = 1
+      const userId = session.data?.user.id
       const result = await getUserWatchlists(userId)
       if (result.success) {
         setWatchlists((prevWatchlists) => {
@@ -89,7 +89,7 @@ export default function WatchlistSection() {
         { stocks: { ticker: "ETH", name: "Ethereum" } },
         { stocks: { ticker: "BTC", name: "Bitcoin" } },
         { stocks: { ticker: "BNB", name: "Binance Coin" } },
-        { stocks: { ticker: "USDT", name: "Tether" } },
+        { stocks: { ticker: "SOL", name: "SOLANA" } },
       ],
     }
 
