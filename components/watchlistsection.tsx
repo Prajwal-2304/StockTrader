@@ -54,11 +54,8 @@ export default function WatchlistSection() {
     .flatMap(w => w.stocks)
     .map(s => s.stocks.ticker+"USDT");
   const prices = useBulkPrices(tickers);
- // console.log("Price received is ",prices)
   const sp=prices[selectedCrypto?.ticker.concat("USDT")||tickers[0]]
- // console.log("Actual price is ",sp)
-  // const singlePrice = useSinglePrice(selectedCrypto?.ticker || tickers[0]);
-  
+ 
   const { news, loading: newsLoading } = useNewsData(selectedCrypto?.ticker || "");
 
   useEffect(() => {

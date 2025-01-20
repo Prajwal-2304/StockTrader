@@ -25,7 +25,7 @@ export async function fetchWatchListStocks(watchlistId:number){
                 stocks:{select:{
                     ticker:true,
                     name:true,
-                    type:true
+                    chain:true
                 }}
             }
         })

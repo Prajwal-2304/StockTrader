@@ -15,12 +15,14 @@ const setupWebSocket = (apikey: string) => {
 
   globalWs = new WebSocket(`wss://ws.finnhub.io?token=${apikey}`);
 
-  console.log("Connection status is ",globalWs.readyState)
+  
     globalWs.onopen = () => {
-      pendingSubscriptions.forEach(sub => {
-        globalWs?.send(JSON.stringify(sub));
-      });
-      pendingSubscriptions = [];
+      if(globalWs?.readyState==1){
+        pendingSubscriptions.forEach(sub => {
+          globalWs?.send(JSON.stringify(sub));
+        });
+        pendingSubscriptions = [];
+      }
     };
   
 

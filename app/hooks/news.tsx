@@ -18,8 +18,7 @@ export function useNewsData(symbol: string) {
                   `https://finnhub.io/api/v1/news?category=crypto&token=${apikey}`
               );
               const data = await response.json();
-              
-              // If no specific symbol, return all crypto news
+              console.log("news is ",news)
               const newsToShow = symbol 
                   ? data.filter((item: NewsItem) => {
                       const normalizedRelated = decodeURIComponent(item.related || '').toLowerCase();
@@ -28,7 +27,6 @@ export function useNewsData(symbol: string) {
                   }).slice(0, 5)
                   : data.slice(0, 9);
               
-              // Clean up the news data
               const cleanedNews = newsToShow.map((item: NewsItem) => ({
                   ...item,
                   headline: decodeURIComponent(item.headline),
