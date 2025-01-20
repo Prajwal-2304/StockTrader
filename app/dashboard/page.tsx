@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react';
-import { Plus, TrendingUp, Newspaper } from 'lucide-react';
+import { Plus, TrendingUp, Newspaper,User } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -28,6 +28,11 @@ interface Watchlist {
   stocks: string[];
 }
 
+const mockUser = {
+  name: "John Doe",
+  email: "john@example.com"
+};
+
 const cryptoList = [
   { id: 51, ticker: "ETHUSDT", name: "Ethereum", type: "cryptocurrency", holdings: 1.2 },
   { id: 52, ticker: "BTCUSDT", name: "Bitcoin", type: "cryptocurrency", holdings: 0.5 },
@@ -44,12 +49,14 @@ const generateId = () => {
 };
 
 export default function Dashboard() {
-  // All hooks must be called unconditionally at the top level
   const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
   const [selectedWatchlist, setSelectedWatchlist] = useState<string>('');
   const [currentTime, setCurrentTime] = useState<string>('');
   const [isClient, setIsClient] = useState(false);
   const [selectedCrypto, setSelectedCrypto] = useState<typeof cryptoList[0] | null>(null);
+  const [isAddingToWatchlist, setIsAddingToWatchlist] = useState(false);
+  const [availableStocks, setAvailableStocks] = useState<string[]>([]);
+  const [selectedStock, setSelectedStock] = useState<string>('');
   
   // Get prices for all cryptocurrencies
   const symbols = cryptoList.map(crypto => crypto.ticker);
@@ -73,6 +80,8 @@ export default function Dashboard() {
     setWatchlists([{ id: '1', name: 'Default', stocks: [] }]);
     setSelectedWatchlist('1');
     setIsClient(true);
+    // Mock available stocks - replace with actual API call
+    setAvailableStocks(cryptoList.map(crypto => crypto.ticker));
   }, []);
 
   // Handle time updates
@@ -87,21 +96,121 @@ export default function Dashboard() {
   }, []);
 
   const addWatchlist = (name: string) => {
-    setWatchlists(prev => [...prev, {
+    const newWatchlist = {
       id: generateId(),
       name,
       stocks: []
-    }]);
+    };
+    setWatchlists(prev => [...prev, newWatchlist]);
+    setSelectedWatchlist(newWatchlist.id);
+  };
+
+  const addStockToWatchlist = (stockTicker: string) => {
+    setWatchlists(prev => prev.map(watchlist => {
+      if (watchlist.id === selectedWatchlist) {
+        return {
+          ...watchlist,
+          stocks: [...new Set([...watchlist.stocks, stockTicker])]
+        };
+      }
+      return watchlist;
+    }));
+    setIsAddingToWatchlist(false);
+  };
+
+  const getCurrentWatchlist = () => {
+    return watchlists.find(w => w.id === selectedWatchlist) || watchlists[0];
   };
 
   if (!isClient) {
     return <div>Loading...</div>;
   }
 
-  // Render different views based on selectedCrypto
-  const renderCryptoDetail = () => {
-    if (!selectedCrypto) return null;
+  const renderWatchlistHeader = () => (
+    <div className="flex items-center justify-between mb-6 bg-card p-4 rounded-lg shadow-sm">
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <User className="w-5 h-5 text-muted-foreground" />
+          <span className="font-medium">{mockUser.name}</span>
+        </div>
+        <div className="h-4 w-px bg-border" />
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Current Watchlist:</span>
+          <Select value={selectedWatchlist} onValueChange={setSelectedWatchlist}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Select a watchlist" />
+            </SelectTrigger>
+            <SelectContent>
+              {watchlists.map(watchlist => (
+                <SelectItem key={watchlist.id} value={watchlist.id}>
+                  {watchlist.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <Dialog open={isAddingToWatchlist} onOpenChange={setIsAddingToWatchlist}>
+          <DialogTrigger asChild>
+            <Button variant="outline">
+              <Plus className="w-4 h-4 mr-2" />
+              Add Stock
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add Stock to Watchlist</DialogTitle>
+            </DialogHeader>
+            <div className="flex flex-col gap-4">
+              <Select value={selectedStock} onValueChange={setSelectedStock}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a stock" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableStocks.map(stock => (
+                    <SelectItem key={stock} value={stock}>
+                      {stock}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button 
+                onClick={() => selectedStock && addStockToWatchlist(selectedStock)}
+                disabled={!selectedStock}
+              >
+                Add to Watchlist
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="w-4 h-4 mr-2" />
+              New Watchlist
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Watchlist</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              const name = formData.get('name') as string;
+              if (name) addWatchlist(name);
+            }}>
+              <Input name="name" placeholder="Watchlist name" className="mb-4" />
+              <Button type="submit">Create</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </div>
+  );
 
+  if (selectedCrypto) {
     return (
       <div className="p-6 max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-6">
@@ -117,18 +226,6 @@ export default function Dashboard() {
               {selectedCrypto.name} Dashboard
             </h1>
           </div>
-          <Select value={selectedWatchlist} onValueChange={setSelectedWatchlist}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select a watchlist" />
-            </SelectTrigger>
-            <SelectContent>
-              {watchlists.map(watchlist => (
-                <SelectItem key={watchlist.id} value={watchlist.id}>
-                  {watchlist.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
 
         <div className="grid gap-6">
@@ -175,62 +272,43 @@ export default function Dashboard() {
         </div>
       </div>
     );
-  };
+  }
 
-  const renderDashboard = () => {
-    return (
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold">Crypto Dashboard</h1>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                New Watchlist
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Create New Watchlist</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                const name = formData.get('name') as string;
-                if (name) addWatchlist(name);
-              }}>
-                <Input name="name" placeholder="Watchlist name" className="mb-4" />
-                <Button type="submit">Create</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+  return (
+    <div className="p-6 max-w-7xl mx-auto">
+      {renderWatchlistHeader()}
 
-        <Card className="mb-8">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-5 h-5" />
-              <h2 className="text-xl font-semibold">Portfolio Summary</h2>
+      <Card className="mb-8">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp className="w-5 h-5" />
+            <h2 className="text-xl font-semibold">Portfolio Summary</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-primary/5 rounded-lg">
+              <div className="text-sm text-muted-foreground mb-1">Total Value</div>
+              <div className="text-2xl font-mono">${totalPortfolioValue.toFixed(2)}</div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 bg-primary/5 rounded-lg">
-                <div className="text-sm text-muted-foreground mb-1">Total Value</div>
-                <div className="text-2xl font-mono">${totalPortfolioValue.toFixed(2)}</div>
-              </div>
-              <div className="p-4 bg-primary/5 rounded-lg">
-                <div className="text-sm text-muted-foreground mb-1">Number of Assets</div>
-                <div className="text-2xl font-mono">{cryptoList.length}</div>
-              </div>
-              <div className="p-4 bg-primary/5 rounded-lg">
-                <div className="text-sm text-muted-foreground mb-1">Last Updated</div>
-                <div className="text-2xl font-mono">{currentTime}</div>
-              </div>
+            <div className="p-4 bg-primary/5 rounded-lg">
+              <div className="text-sm text-muted-foreground mb-1">Number of Assets</div>
+              <div className="text-2xl font-mono">{cryptoList.length}</div>
             </div>
-          </CardContent>
-        </Card>
+            <div className="p-4 bg-primary/5 rounded-lg">
+              <div className="text-sm text-muted-foreground mb-1">Last Updated</div>
+              <div className="text-2xl font-mono">{currentTime}</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {cryptoList.map((crypto) => (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {cryptoList
+          .filter(crypto => {
+            const currentWatchlist = getCurrentWatchlist();
+            return currentWatchlist.stocks.length === 0 || 
+                   currentWatchlist.stocks.includes(crypto.ticker);
+          })
+          .map((crypto) => (
             <Card 
               key={crypto.id}
               className="cursor-pointer hover:shadow-lg transition-shadow"
@@ -256,43 +334,40 @@ export default function Dashboard() {
               </CardContent>
             </Card>
           ))}
-        </div>
-
-        <div className="grid gap-4">
-          <div className="flex items-center gap-2">
-            <Newspaper className="w-5 h-5" />
-            <h2 className="text-xl font-semibold">Latest Crypto News</h2>
-          </div>
-          {newsLoading ? (
-            <p>Loading news...</p>
-          ) : news.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {news.map((item, index) => (
-                <Card key={index}>
-                  <CardContent className="p-4">
-                    <a 
-                      href={item.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="hover:text-blue-500"
-                    >
-                      <h3 className="font-medium mb-2">{item.headline}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{item.summary}</p>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {new Date(item.datetime * 1000).toLocaleDateString()}
-                      </div>
-                    </a>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <p>No news available</p>
-          )}
-        </div>
       </div>
-    );
-  };
 
-  return selectedCrypto ? renderCryptoDetail() : renderDashboard();
+      <div className="grid gap-4">
+        <div className="flex items-center gap-2">
+          <Newspaper className="w-5 h-5" />
+          <h2 className="text-xl font-semibold">Latest Crypto News</h2>
+        </div>
+        {newsLoading ? (
+          <p>Loading news...</p>
+        ) : news.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {news.map((item, index) => (
+              <Card key={index}>
+                <CardContent className="p-4">
+                  <a 
+                    href={item.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="hover:text-blue-500"
+                  >
+                    <h3 className="font-medium mb-2">{item.headline}</h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{item.summary}</p>
+                    <div className="text-xs text-muted-foreground mt-2">
+                      {new Date(item.datetime * 1000).toLocaleDateString()}
+                    </div>
+                  </a>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <p>No news available</p>
+        )}
+      </div>
+    </div>
+  );
 }
