@@ -6,8 +6,9 @@ import WatchlistSection from './watchlistsection';
 import PortfolioSection from './portfolio';
 import TokenLaunchSection from './token';
 import ManageFundsSection from './managefunds';
-import { signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
+import { redirect, useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 export type Section = 'watchlist' | 'portfolio' | 'token-launch' | 'manage-funds';
 
 const navigationItems = [
@@ -19,6 +20,7 @@ const navigationItems = [
 
 function App() {
   const [activeSection, setActiveSection] = useState<Section>('watchlist');
+  
 const router =useRouter()
   const handleLogout = async () =>{
       await signOut({redirect:false})

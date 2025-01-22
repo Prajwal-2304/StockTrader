@@ -61,7 +61,6 @@ let amount
         where:{id:pfStockId},
         select:{buyprice:true,quantity:true}
       }) 
-      console.log("retrived ",details)
         if(quantity-details?.quantity! ==0){
                 const del=await tx.portfolioStock.delete({
                   where:{id:pfStockId}
@@ -74,22 +73,12 @@ let amount
                 })
               
         }
-        
-        if(details?.buyprice!>price){
-      
-          amount =(quantity*details?.buyprice!)-(quantity*price)
-          const bal=await getBalance(userId)
-      
-          withdrawFunds(userId,amount);
-         
-        }else{
-       
-          amount=(quantity*price)-(quantity*details?.buyprice!)
-        
-          addFunds(userId,amount)
-          const bal=await getBalance(userId);
-        
-        }
+        const amt=quantity*price;
+        const bal=await getBalance(userId);
+        const sel= await tx.users.update({
+          where:{id:userId},
+          data:{balance:(bal.balance!+amt)}
+        })
     })
     revalidatePath("/dashboard")
     return {success:true}

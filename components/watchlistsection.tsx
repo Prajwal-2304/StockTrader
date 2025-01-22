@@ -134,8 +134,8 @@ export default function WatchlistSection() {
             return;
         }
         else{
-          const response=await buyStock(userID,ticker,price,quantity,res.balance!)
-          console.log(response)
+          const response=await buyStock(userID,ticker,price,parseFloat(quantity),res.balance!)
+        //  console.log(typeof(quantity))
           if(response?.success){
             console.log("Successfully bought")
             toast({
@@ -272,11 +272,12 @@ export default function WatchlistSection() {
   }
 
   const handleQuantityChange = (ticker: string, value: string) => {
-    const quantity = Number.parseFloat(value) || 0
-    setQuantities((prev) => ({
-      ...prev,
-      [ticker]: quantity,
-    }))
+    const numValue = Number.parseFloat(value) || 0
+    if (!isNaN(numValue) && numValue > 0) {
+      setQuantities((prev) => ({ ...prev, [ticker]: value }))
+    } else if (value === "") {
+      setQuantities((prev) => ({ ...prev, [ticker]: "" }))
+    }
   }
 
   if (selectedCrypto) {
@@ -311,6 +312,7 @@ export default function WatchlistSection() {
                     value={quantities[selectedCrypto.ticker] || ""}
                     onChange={(e) => handleQuantityChange(selectedCrypto.ticker, e.target.value)}
                     className="w-full"
+                    min={0}
                   />
                 </div>
                 <Button
@@ -321,14 +323,7 @@ export default function WatchlistSection() {
                 >
                   Buy
                 </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    console.log(`Sell ${selectedCrypto.ticker}`)
-                  }}
-                >
-                  Sell
-                </Button>
+               
               </div>
             </div>
           </Card>
@@ -509,17 +504,6 @@ export default function WatchlistSection() {
                     }}
                   >
                     Buy
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      console.log(`Sell ${stock.ticker}`)
-                    }}
-                  >
-                    Sell
                   </Button>
                 </div>
               </div>

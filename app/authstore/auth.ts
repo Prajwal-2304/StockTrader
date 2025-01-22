@@ -13,14 +13,7 @@ export const authOptions:NextAuthOptions={
             async authorize(credentials){
                 if(!credentials) return {success:false,error:"Missing credentials "};
             
-            // const usermail=await db.users.findUnique({
-            //     where:{email:credentials.email}
-            // })
-            // console.log(usermail)
-            // if(!usermail){
-            //     console.log("Entered thee error ")
-            //     return {success:false,error:"Invalid mail id"}
-            // }
+            
             const res= await db.users.findUnique({
                 select:{salt:true},
                 where:{email:credentials.email}

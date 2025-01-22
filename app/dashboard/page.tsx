@@ -1,14 +1,14 @@
 "use server"
-import { Suspense, use } from 'react';
+import { Suspense, use, useEffect } from 'react';
 import db from "@/db/index"
 import App from '@/components/App';
 import { getServerSession } from 'next-auth';
-import { redirect } from 'next/navigation';
+import { redirect,useRouter } from 'next/navigation';
 import { authOptions } from '../authstore/auth';
+import { MessageDisplay } from '@/components/message';
+
 export default async function DashboardPage() {
   const session= await getServerSession(authOptions);
-  //console.log(session)
-
   if(session){
     const userId = session?.user?.id!!; 
   const user = await db.users.findUnique({
@@ -41,8 +41,10 @@ export default async function DashboardPage() {
     </Suspense>
   );
   }else{
+    console.log("Here")
+    const message="You must be logged in to access this page "
     return(
-      redirect("/")
+      <MessageDisplay message={message}/>
     )
-  }
+}
 }

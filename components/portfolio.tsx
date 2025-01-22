@@ -37,7 +37,7 @@ export default function PortfolioSection() {
   const [quantities, setQuantities] = useState<{ [key: number]: string }>({})
   const { toast } = useToast()
 
-  // Initialize quantities when portfolio data is loaded
+
   useEffect(() => {
     if (portfolioData?.stocks) {
       const initialQuantities = portfolioData.stocks.reduce((acc, holding) => ({
@@ -73,7 +73,7 @@ export default function PortfolioSection() {
   const symbols = portfolioData ? [...new Set(portfolioData.stocks.map((holding) => holding.stockticker.concat("USDT")))] : []
   const prices = useBulkPrices(symbols)
 
-  // Monitor price data status
+
   useEffect(() => {
     if (symbols.length > 0 && prices) {
       const hasValidPrices = symbols.every(symbol => 
@@ -135,12 +135,12 @@ export default function PortfolioSection() {
           description: "Sold successfully",
           variant: "default"
         })
-        // Reset the quantity input after successful sale
+
         setQuantities(prev => ({
           ...prev,
           [holding.id]: ""
         }))
-        // Refresh portfolio data
+
         const updatedData = await getHoldings(userID)
         setPortfolioData(updatedData)
       } else {
@@ -169,8 +169,39 @@ export default function PortfolioSection() {
         <h1 className="text-2xl font-bold">Portfolio Overview</h1>
         <p>Start buying to build your portfolio!</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Empty state cards */}
-          {/* ... (keep your existing empty state JSX) ... */}
+        <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Value</p>
+                  <p className="text-2xl font-bold">$0</p>
+                </div>
+                <Wallet className="w-8 h-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Invested Amount</p>
+                  <p className="text-2xl font-bold">$0</p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Profit/Loss</p>
+                  <p className="text-2xl font-bold">$0</p>
+                </div>
+                <TrendingUp className="w-8 h-8 text-primary" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -251,6 +282,7 @@ export default function PortfolioSection() {
                 <div>
                   <p className="font-medium">{holding.stockticker}</p>
                   <p className="text-sm text-muted-foreground">{holding.quantity} tokens</p>
+                  <p>Buy price: {holding.buyprice}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   {isPriceLoading ? (
@@ -267,6 +299,7 @@ export default function PortfolioSection() {
                       onChange={(e) => handleQuantityChange(holding.id, e.target.value)}
                       placeholder="Qty"
                       className="w-20"
+                      min={0}
                     />
                     <Button 
                       variant="outline" 
