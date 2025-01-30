@@ -19,7 +19,10 @@ export const formSchemaStageOne = z.object({
 
 export const formSchemaStageTwo = z.object({
   accno: z.string().min(1, { message: "Account number is required" }),
-  panNo: z.string().length(10, { message: "PAN number must be 10 characters long" }),
+  panNo: z.string().length(10, "PAN number should be of length 10").refine(
+    (value) => /^[A-Z]{5}[0-9]{4}[A-Z]$/.test(value),
+    { message: "PAN Number must be in the format AAAAA0000A, A is alphabet and 0 is number" }
+  ),
   dateOfBirth: z.string().min(1, { message: "Date of birth is required" }),
 });
 

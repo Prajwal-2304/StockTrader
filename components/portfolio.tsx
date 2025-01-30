@@ -93,6 +93,7 @@ export default function PortfolioSection() {
 
   const totalValue = calculateTotalValue()
   const totalInvested = portfolioData ? portfolioData.stocks.reduce((sum, holding) => sum + holding.investedAmt, 0) : 0
+  //console.log(portfolioData)
   const profitLoss = totalValue - totalInvested
   const profitLossPercentage = totalInvested !== 0 ? (profitLoss / totalInvested) * 100 : 0
 

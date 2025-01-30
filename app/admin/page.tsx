@@ -17,7 +17,7 @@ export default function AdminWelcome({ adminName }: AdminWelcomeProps) {
     setIsAdding(true)
     try{
       const res= await addStocks()
-      console.log("added successfully");
+    //  console.log("added successfully");
     }catch(err){
       console.log("failed to add");
     }

@@ -27,6 +27,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { buyStock } from '@/app/actions/transaction';
 import { getBalance } from '@/app/actions/funds';
+import { VoiceInput } from './voice';
 type Stock = {
   ticker: string
   name: string
@@ -57,8 +58,8 @@ export default function WatchlistSection() {
   const tickers = watchlists.flatMap((w) => w.stocks).map((s) => s.stocks.ticker + "USDT")
   const prices = useBulkPrices(tickers)
   const sp = prices[selectedCrypto?.ticker.concat("USDT") || tickers[0]]
-  const userID=session?.data?.user?.id
-  const name=session.data?.user?.name
+  const userID = session?.data?.user?.id
+  const name = session.data?.user?.name
 
   const { news, loading: newsLoading } = useNewsData(selectedCrypto?.ticker || "")
 
@@ -120,43 +121,38 @@ export default function WatchlistSection() {
     return () => clearInterval(interval)
   }, [])
 
-
-    const handleBuy = async(ticker:string,quantity:number)=>{
-        const price=prices[ticker.concat("USDT")]
-        //console.log("quantity is ",quantity)
-        const res=await getBalance(userID)
-        if((quantity*price>res.balance!)){
-            toast({
-              title:"Invalid",
-              description:"Insuffcient balance",
-              variant:"destructive"
-            })
-            return;
+  const handleBuy = async (ticker: string, quantity: number) => {
+    const price = prices[ticker.concat("USDT")]
+    //console.log("quantity is ",quantity)
+    const res = await getBalance(userID)
+    if (quantity * price > res.balance!) {
+      toast({
+        title: "Invalid",
+        description: "Insuffcient balance",
+        variant: "destructive",
+      })
+      return
+    } else {
+      const response = await buyStock(userID, ticker, price, Number.parseFloat(quantity), res.balance!)
+      //  console.log(typeof(quantity))
+      if (response?.success) {
+       // console.log("Successfully bought")
+        toast({
+          title: "Success",
+          description: "Bought the coin",
+          variant: "default",
+        })
+      } else {
+        if (response?.error) {
+          toast({
+            title: "Failed",
+            description: `Order failed due to ${response.error}`,
+            variant: "destructive",
+          })
         }
-        else{
-          const response=await buyStock(userID,ticker,price,parseFloat(quantity),res.balance!)
-        //  console.log(typeof(quantity))
-          if(response?.success){
-            console.log("Successfully bought")
-            toast({
-              title:"Success",
-              description:"Bought the coin",
-              variant:"default"
-            })
-          }else{
-            if(response?.error){
-              toast({
-                title:"Failed",
-                description:`Order failed due to ${response.error}`,
-                variant:"destructive"
-              })
-            }
-          }
-        }
+      }
     }
-
-
-
+  }
 
   const handleCreateWatchlist = async (name: string) => {
     // Replace with actual user ID from auth
@@ -197,8 +193,8 @@ export default function WatchlistSection() {
         description: "Successfully added ",
       })
       setIsAddingToWatchlist(false)
-      
-      const userId =  userID
+
+      const userId = userID
       const watchlistsResult = await getUserWatchlists(userId)
       if (watchlistsResult.success) {
         setWatchlists(watchlistsResult.data)
@@ -280,6 +276,55 @@ export default function WatchlistSection() {
     }
   }
 
+  const handleVoiceInput = (text: string) => {
+    const words = text
+      .toLowerCase()
+      .split(" ")
+      .map((word) => word.replace(/[,!?]/g, ""))
+    let buyIndex = words.indexOf("buy")
+    if (buyIndex === -1) buyIndex = words.indexOf("by") 
+    if (buyIndex !== -1 && buyIndex < words.length - 2) {
+      let quantity: number
+      let ticker: string
+      if (isNaN(Number(words[buyIndex + 1]))) {
+        const numberWords: { [key: string]: number } = {
+          one: 1,
+          two: 2,
+          three: 3,
+          four: 4,
+          five: 5,
+          six: 6,
+          seven: 7,
+          eight: 8,
+          nine: 9,
+          ten: 10,
+        }
+        quantity = numberWords[words[buyIndex + 1]] || 1 // Default to 1 if not recognized
+      } else {
+        quantity = Number(words[buyIndex + 1])
+      }
+     // console.log(quantity)
+      ticker = words[buyIndex + 2].toUpperCase().replace(/\./g, "");
+      //console.log(ticker)
+      if (quantity > 0 && availableStocks.some((stock) => stock.ticker === ticker)) {
+        handleQuantityChange(ticker, quantity.toString())
+        handleBuy(ticker, quantity)
+      } else {
+        toast({
+          title: "Invalid voice command",
+          description: "Please specify a valid quantity and ticker symbol.",
+          variant: "destructive",
+        })
+      }
+    } else {
+      toast({
+        title: "Invalid voice command",
+        description: "Please use the format: 'Buy [quantity] [ticker]'",
+        variant: "destructive",
+      })
+    }
+  }
+
   if (selectedCrypto) {
     return (
       <div className="p-6 max-w-6xl mx-auto">
@@ -318,12 +363,11 @@ export default function WatchlistSection() {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    console.log(handleBuy(selectedCrypto.ticker,quantities[selectedCrypto.ticker]))
+                   // console.log(handleBuy(selectedCrypto.ticker, quantities[selectedCrypto.ticker]))
                   }}
                 >
                   Buy
                 </Button>
-               
               </div>
             </div>
           </Card>
@@ -500,7 +544,7 @@ export default function WatchlistSection() {
                     className="flex-1"
                     onClick={(e) => {
                       e.stopPropagation()
-                      handleBuy(stock.ticker,quantities[stock.ticker])
+                      handleBuy(stock.ticker, quantities[stock.ticker])
                     }}
                   >
                     Buy
@@ -559,6 +603,9 @@ export default function WatchlistSection() {
           </p>
         </div>
       )}
+      <div className="mt-6">
+        <VoiceInput onResult={handleVoiceInput} />
+      </div>
     </div>
   )
 }

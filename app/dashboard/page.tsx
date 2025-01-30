@@ -41,7 +41,7 @@ export default async function DashboardPage() {
     </Suspense>
   );
   }else{
-    console.log("Here")
+   // console.log("Here")
     const message="You must be logged in to access this page "
     return(
       <MessageDisplay message={message}/>

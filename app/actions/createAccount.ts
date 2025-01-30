@@ -42,7 +42,7 @@ async function sendMail({ tpin, mail }: { tpin: any; mail: string }) {
   }
   try {
     const res = await transporter.sendMail(mailOptions)
-    console.log("Sent mail")
+   // console.log("Sent mail")
     return res
   } catch (err) {
     console.error("Error sending mail", err)

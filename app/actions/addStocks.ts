@@ -30,9 +30,9 @@ const stocks = [
                     data:stocks,
                     skipDuplicates:true
                 })
-                console.log("Stocks inserted");
+                //console.log("Stocks inserted");
             }catch{
-                console.log("Error inserting stocks")
+                //console.log("Error inserting stocks")
             }
   }
 

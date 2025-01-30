@@ -59,7 +59,7 @@ let amount
     await db.$transaction(async(tx)=>{
       const details= await tx.portfolioStock.findUnique({
         where:{id:pfStockId},
-        select:{buyprice:true,quantity:true}
+        select:{buyprice:true,quantity:true,investedAmt:true}
       }) 
         if(quantity-details?.quantity! ==0){
                 const del=await tx.portfolioStock.delete({
@@ -67,9 +67,10 @@ let amount
                 })
         }else{  
                 const quant=details?.quantity!-quantity
+                const invamt=details?.investedAmt-(quantity*price)
                 const update= await tx.portfolioStock.update({
                   where:{id:pfStockId},
-                  data:{quantity:quant}
+                  data:{quantity:quant,investedAmt:invamt}
                 })
               
         }
