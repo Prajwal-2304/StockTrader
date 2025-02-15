@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation"
 export default function TokenLaunchSection() {
   const router=useRouter()
   const handleClick=()=>{
-      router.push("http://localhost:3001")
+      router.push("/token")
   }
   return (
     <div className="max-w-6xl mx-auto space-y-8">
