@@ -19,6 +19,7 @@ import { createTokenMint } from "@/app/actions/createMintAcc"
 import { Loader2, ExternalLink } from "lucide-react"
 import Link from "next/link"
 import { HandleFileUpload } from "@/cloud/uploadFile"
+import { useSession } from "next-auth/react"
 
 // import { createAccount } from "@/actions/createTokenAcc"
 
@@ -49,13 +50,16 @@ export default function CreateToken() {
   const [submitted, setSubmit] = React.useState(false)
   const [sig, setSig] = React.useState('')
   const addr = `https://explorer.solana.com/address/${sig}?cluster=devnet`
-
-
-
+  const session = useSession()
+  const [loading,setLoading]=React.useState(true)
   useEffect(() => {
+    if(session.status==="unauthenticated"){
+      router.replace("/unauthorized")
+    }
     if (!connected || !wallet) {
       router.replace('/token')
     }
+    setLoading(false)
   })
 
 
@@ -89,7 +93,7 @@ export default function CreateToken() {
       }
     }
   }
-  if (!isMintAvailable && submitted) {
+  if ((!isMintAvailable && submitted)||(loading)) {
     return (
       <div className="flex justify-center items-center h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

@@ -9,19 +9,13 @@ export default function Providers({ children }: {
     children: React.ReactNode 
 }) {
     return (
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <ConnectionProvider endpoint={process.env.SOLANA_DEVNET_RPC_URL || "https://api.devnet.solana.com"}>
+        <ConnectionProvider endpoint={process.env.SOLANA_DEVNET_RPC_URL || "https://api.devnet.solana.com"}>
                 <WalletProvider wallets={[]} autoConnect>
                     <WalletModalProvider>
                     {children}
                     </WalletModalProvider>
                 </WalletProvider>
             </ConnectionProvider>
-        </ThemeProvider>
+        
     )
 }
