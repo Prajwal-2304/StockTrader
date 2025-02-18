@@ -71,7 +71,6 @@ model Portfolio{
   userid                      Int 
   user                        Users             @relation(fields: [userid],references: [id],onDelete: Cascade)
   stocks                      PortfolioStock[]
-  investedAmount              Float             @default(0)
 } 
 
 model PortfolioStock{
@@ -100,7 +99,7 @@ model Order{
   quantity                    Float 
   date                        DateTime
   price                       Float 
-  user                        Users             @relation(fields: [userId],references: [id])
-  stock                       Stock             @relation(fields: [stockticker],references: [ticker])
+  user                        Users             @relation(fields: [userId],references: [id],onDelete: Cascade)
+  stock                       Stock             @relation(fields: [stockticker],references: [ticker],onDelete: Cascade)
 }
 

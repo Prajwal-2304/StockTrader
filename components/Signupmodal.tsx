@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { zodResolver } from '@hookform/resolvers/zod'
-import { formSchemaStageOne,formSchemaStageTwo,formSchemaStageThree, finaldata } from '@/lib/userRegSchema'
+import { formSchemaStageOne,formSchemaStageTwo,formSchemaStageThree } from '@/lib/userRegSchema'
 
 import { useForm,useFieldArray } from 'react-hook-form'
 import {Form, FormField, FormItem, FormLabel, FormControl, FormMessage} from "../components/ui/form"
